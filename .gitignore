@@ -1,0 +1,10 @@
+.env.local
+node_modules/
+alerts/
+.playwright-mcp/
+.local/
+runs/
+logs/
+dashboard/
+*.png
+.DS_Store

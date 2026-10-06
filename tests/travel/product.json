@@ -1,0 +1,311 @@
+{
+  "id": "travel",
+  "name": "Travel (IKHLAS Secure Travel)",
+  "description": "Quote journey for IKHLAS Secure Travel Takaful (Domestic, Asia and Worldwide) through to the Summary page: e-invoice question and declarations are exercised. PAY is enabled but never clicked.",
+  "maxScenarios": 8,
+  "estSecondsPerScenario": 25,
+  "scenarioFields": [
+    {
+      "key": "country",
+      "label": "Destination",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "Malaysia",
+        "Singapore",
+        "Japan",
+        "Thailand",
+        "South Korea",
+        "Indonesia",
+        "Vietnam",
+        "Philippines",
+        "Cambodia",
+        "Brunei",
+        "India",
+        "Australia",
+        "United Kingdom",
+        "France",
+        "Germany",
+        "United States",
+        "Canada"
+      ],
+      "hint": "Malaysia = Domestic (1 plan). Asian countries = Asia. Australia/UK/France/Germany = Worldwide excl. USA & Canada. USA/Canada = Worldwide incl."
+    },
+    {
+      "key": "purpose",
+      "label": "Trip purpose",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "Leisure",
+        "Business"
+      ],
+      "hint": "The funnel has no purpose field; it is logged only"
+    },
+    {
+      "key": "departInDays",
+      "label": "Departs in (days)",
+      "type": "number",
+      "min": 1,
+      "max": 365,
+      "gen": "range",
+      "genRange": [
+        7,
+        60
+      ]
+    },
+    {
+      "key": "tripLengthDays",
+      "label": "Trip length (days)",
+      "type": "number",
+      "min": 1,
+      "max": 90,
+      "gen": "range",
+      "genRange": [
+        3,
+        21
+      ]
+    },
+    {
+      "key": "planPosition",
+      "label": "Plan (1 = first)",
+      "type": "number",
+      "min": 1,
+      "max": 4,
+      "gen": "range",
+      "genRange": [
+        1,
+        4
+      ],
+      "hint": "Silver, Gold, Platinum, Diamond. Domestic (Malaysia) has only plan 1"
+    },
+    {
+      "key": "einvoice",
+      "label": "E-invoice (LHDN registered)",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "No",
+        "Yes"
+      ],
+      "hint": "Yes reveals the TIN field"
+    },
+    {
+      "key": "marketing",
+      "label": "Tick marketing consent",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "No",
+        "Yes"
+      ],
+      "hint": "Optional third declaration"
+    }
+  ],
+  "defaultScenarios": [
+    {
+      "country": "Singapore",
+      "purpose": "Leisure",
+      "departInDays": 14,
+      "tripLengthDays": 7,
+      "planPosition": 1,
+      "einvoice": "No",
+      "marketing": "No"
+    },
+    {
+      "country": "Japan",
+      "purpose": "Business",
+      "departInDays": 21,
+      "tripLengthDays": 10,
+      "planPosition": 2,
+      "einvoice": "Yes",
+      "marketing": "No"
+    },
+    {
+      "country": "Thailand",
+      "purpose": "Leisure",
+      "departInDays": 30,
+      "tripLengthDays": 14,
+      "planPosition": 3,
+      "einvoice": "No",
+      "marketing": "No"
+    },
+    {
+      "country": "Malaysia",
+      "purpose": "Leisure",
+      "departInDays": 10,
+      "tripLengthDays": 4,
+      "planPosition": 1,
+      "einvoice": "No",
+      "marketing": "Yes"
+    },
+    {
+      "country": "Australia",
+      "purpose": "Business",
+      "departInDays": 45,
+      "tripLengthDays": 12,
+      "planPosition": 3,
+      "einvoice": "Yes",
+      "marketing": "No"
+    },
+    {
+      "country": "United States",
+      "purpose": "Leisure",
+      "departInDays": 60,
+      "tripLengthDays": 14,
+      "planPosition": 4,
+      "einvoice": "No",
+      "marketing": "No"
+    }
+  ],
+  "participantFields": [
+    {
+      "key": "fullName",
+      "label": "Full name",
+      "group": "participant",
+      "type": "text",
+      "gen": "name",
+      "transform": "upper",
+      "pattern": "^[A-Z][A-Z .'@/-]{1,79}$"
+    },
+    {
+      "key": "nric",
+      "label": "NRIC (12 digits)",
+      "group": "participant",
+      "type": "text",
+      "gen": "nric",
+      "pattern": "^[0-9]{12}$",
+      "hint": "Must be a Malaysian citizen aged 18-60"
+    },
+    {
+      "key": "mobile",
+      "label": "Mobile",
+      "group": "participant",
+      "type": "text",
+      "gen": "mobile",
+      "pattern": "^01[0-9]{8,9}$"
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "group": "participant",
+      "type": "text",
+      "gen": "email",
+      "pattern": "^[^@\\s]{1,64}@[^@\\s]{1,120}$"
+    },
+    {
+      "key": "addressLine1",
+      "label": "Address line 1",
+      "group": "participant",
+      "type": "text",
+      "gen": "address1",
+      "pattern": "^.{1,80}$"
+    },
+    {
+      "key": "addressLine2",
+      "label": "Address line 2",
+      "group": "participant",
+      "type": "text",
+      "gen": "address2",
+      "pattern": "^.{1,80}$"
+    },
+    {
+      "key": "postcode",
+      "label": "Postcode",
+      "group": "participant",
+      "type": "text",
+      "gen": "postcode",
+      "pattern": "^[0-9]{5}$",
+      "hint": "City and state fill in from this"
+    },
+    {
+      "key": "carrier",
+      "label": "Airline",
+      "group": "flight",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "Malaysia Airlines",
+        "Air Asia"
+      ]
+    },
+    {
+      "key": "outboundNo",
+      "label": "Outbound flight no.",
+      "group": "flight",
+      "type": "text",
+      "gen": "flightOut",
+      "transform": "upper",
+      "pattern": "^[A-Z0-9]{2,3}[0-9]{1,4}$"
+    },
+    {
+      "key": "returnNo",
+      "label": "Return flight no.",
+      "group": "flight",
+      "type": "text",
+      "gen": "flightBack",
+      "transform": "upper",
+      "pattern": "^[A-Z0-9]{2,3}[0-9]{1,4}$"
+    },
+    {
+      "key": "bankName",
+      "label": "Auto Credit bank",
+      "group": "bank",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "RHB BANK BERHAD",
+        "MAYBANK BERHAD",
+        "CIMB BANK BERHAD",
+        "PUBLIC BANK BERHAD",
+        "BANK ISLAM MALAYSIA BERHAD",
+        "AMBANK BERHAD",
+        "BANK SIMPANAN NASIONAL BERHAD",
+        "HSBC BANK MALAYSIA BERHAD",
+        "HONG LEONG BANK"
+      ],
+      "hint": "Account number is a placeholder sized to the bank's rule"
+    },
+    {
+      "key": "tin",
+      "label": "TIN (used when e-invoice = Yes)",
+      "group": "einvoice",
+      "type": "text",
+      "gen": "tin",
+      "transform": "upper",
+      "pattern": "^[A-Z0-9]{10,20}$",
+      "hint": "Placeholder only, min 10 characters"
+    },
+    {
+      "key": "sst",
+      "label": "SST no. (optional)",
+      "group": "einvoice",
+      "type": "text",
+      "pattern": "^$|^[A-Za-z0-9-]{5,30}$"
+    }
+  ],
+  "defaultParticipant": {
+    "fullName": "MUHAMMAD ADAM BIN AZLAN",
+    "nric": "900101105555",
+    "mobile": "0123456789",
+    "email": "adam.azlan@example.com",
+    "addressLine1": "No. 10 Jalan Mawar 1",
+    "addressLine2": "Taman Mawar",
+    "postcode": "43000",
+    "carrier": "Malaysia Airlines",
+    "outboundNo": "MH603",
+    "returnNo": "MH604",
+    "bankName": "RHB BANK BERHAD",
+    "tin": "IG00000000000",
+    "sst": ""
+  },
+  "limits": [
+    {
+      "whenKey": "country",
+      "whenValue": "Malaysia",
+      "field": "planPosition",
+      "max": 1,
+      "message": "Malaysia (Domestic) has only one plan; use plan 1"
+    }
+  ]
+}

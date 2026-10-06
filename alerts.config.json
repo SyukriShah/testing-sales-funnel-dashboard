@@ -1,0 +1,48 @@
+{
+  "dashboardUrl": "http://127.0.0.1:4317/dashboard/index.html",
+  "sharedDashboardUrl": "",
+  "rules": {
+    "failing": true,
+    "recovered": true,
+    "degraded": false,
+    "environmentDifferences": true,
+    "repeatEveryHours": 12,
+    "ignoreDashboardRuns": true,
+    "environments": [
+      "production"
+    ]
+  },
+  "channels": {
+    "macos": {
+      "enabled": true,
+      "notification": true,
+      "dialog": "critical"
+    },
+    "teams": {
+      "enabled": false,
+      "urlEnv": "TEAMS_WEBHOOK_URL"
+    },
+    "slack": {
+      "enabled": false,
+      "urlEnv": "SLACK_WEBHOOK_URL"
+    },
+    "webhook": {
+      "enabled": false,
+      "urlEnv": "ALERT_WEBHOOK_URL"
+    },
+    "email": {
+      "enabled": false,
+      "to": [
+        "mohd.syukri@takaful-ikhlas.com.my"
+      ],
+      "from": "mohd.syukri@takaful-ikhlas.com.my",
+      "smtp": {
+        "hostEnv": "SMTP_HOST",
+        "portEnv": "SMTP_PORT",
+        "userEnv": "SMTP_USER",
+        "passEnv": "SMTP_PASS",
+        "secure": false
+      }
+    }
+  }
+}

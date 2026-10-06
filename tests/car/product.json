@@ -1,0 +1,135 @@
+{
+  "id": "car",
+  "name": "Car (IKHLAS Motor Takaful)",
+  "description": "Entry path of the car funnel and the ID + vehicle lookup. Synthetic data must come back as \"Data not found\" (and fails if it ever matches a real record). Save a company-owned test record below to also walk the full journey up to the Summary page; PAY is never pressed.",
+  "maxScenarios": 6,
+  "estSecondsPerScenario": 20,
+  "participantTitle": "Participant details",
+  "scenarioFields": [
+    {
+      "key": "source",
+      "label": "Data source",
+      "type": "select",
+      "options": [
+        "Synthetic data",
+        "Saved test record"
+      ],
+      "hint": "Synthetic: made-up ID and plate, lookup must say not found. Saved test record: uses the record saved above."
+    },
+    {
+      "key": "product",
+      "label": "Car product (Get Quote button)",
+      "type": "select",
+      "options": [
+        "IKHLAS Private Car Comprehensive Plus Takaful",
+        "IKHLAS Comprehensive Private Car Takaful"
+      ],
+      "wide": true
+    },
+    {
+      "key": "idType",
+      "label": "ID type",
+      "type": "select",
+      "options": [
+        "NRIC",
+        "Passport",
+        "Police/Army",
+        "Business"
+      ],
+      "ignoredWhen": {
+        "key": "source",
+        "startsWith": "Saved"
+      }
+    },
+    {
+      "key": "idNumber",
+      "label": "ID number (synthetic)",
+      "type": "text",
+      "gen": "nric",
+      "transform": "upper",
+      "pattern": "^[A-Za-z0-9]{6,20}$",
+      "ignoredWhen": {
+        "key": "source",
+        "startsWith": "Saved"
+      }
+    },
+    {
+      "key": "vehicleNumber",
+      "label": "Vehicle number (synthetic)",
+      "type": "text",
+      "gen": "plate",
+      "transform": "upper",
+      "pattern": "^[A-Za-z0-9]{2,10}$",
+      "hint": "Use a plate that is not a real customer's",
+      "ignoredWhen": {
+        "key": "source",
+        "startsWith": "Saved"
+      }
+    }
+  ],
+  "defaultScenarios": [
+    {
+      "product": "IKHLAS Private Car Comprehensive Plus Takaful",
+      "idType": "NRIC",
+      "idNumber": "900101105555",
+      "vehicleNumber": "ZZZ9999",
+      "source": "Synthetic data"
+    },
+    {
+      "product": "IKHLAS Comprehensive Private Car Takaful",
+      "idType": "NRIC",
+      "idNumber": "880923145511",
+      "vehicleNumber": "ZQK4821",
+      "source": "Synthetic data"
+    },
+    {
+      "product": "IKHLAS Private Car Comprehensive Plus Takaful",
+      "idType": "Passport",
+      "idNumber": "A12345678",
+      "vehicleNumber": "XZW1357",
+      "source": "Synthetic data"
+    }
+  ],
+  "participantFields": [],
+  "defaultParticipant": {},
+  "secretsTitle": "Saved test record (company-owned)",
+  "secretsHint": "Stored only on this Mac in .local/secrets.json and never shown again. Its screenshots stay local and are left out of the shared dashboard link.",
+  "secretFields": [
+    {
+      "key": "idType",
+      "label": "ID type",
+      "type": "select",
+      "options": [
+        "NRIC",
+        "Passport",
+        "Police/Army",
+        "Business"
+      ]
+    },
+    {
+      "key": "idNumber",
+      "label": "ID number",
+      "type": "password",
+      "pattern": "^[A-Za-z0-9]{6,20}$"
+    },
+    {
+      "key": "vehicleNumber",
+      "label": "Vehicle number",
+      "type": "password",
+      "transform": "upper",
+      "pattern": "^[A-Za-z0-9]{2,10}$"
+    }
+  ],
+  "secretsRequiredWhen": {
+    "key": "source",
+    "startsWith": "Saved"
+  },
+  "scenarioIdFrom": [
+    "idType",
+    "source"
+  ],
+  "scenarioIdShort": {
+    "Synthetic data": "synthetic",
+    "Saved test record": "saved"
+  }
+}

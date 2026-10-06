@@ -1,0 +1,18 @@
+# From the project root:  docker compose -f hosting/docker-compose.yml up -d
+# The site folder is mounted, so refreshing it (npm run publish:site) needs no rebuild.
+services:
+  funnel-monitor-site:
+    build:
+      context: ..
+      dockerfile: hosting/Dockerfile
+    image: funnel-monitor-site
+    ports:
+      - "127.0.0.1:8080:8080"   # bound to this host only; the HTTPS / sign-in proxy forwards to it
+    volumes:
+      - ../dashboard/site:/usr/share/nginx/html:ro
+      # - ./.htpasswd:/etc/nginx/.htpasswd:ro   # only if you enable the interim password in nginx.conf
+    read_only: true
+    tmpfs: [/var/cache/nginx, /var/run, /tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped

@@ -1,0 +1,17 @@
+{
+  "id": "hib",
+  "name": "Hospital Income Benefit (Direct HIB)",
+  "description": "Quote journey for Direct Hospital Income Benefit with dummy data, up to the Summary page. Payment is never pressed.",
+  "maxScenarios": 4,
+  "estSecondsPerScenario": 60,
+  "scenarioFields": [
+    { "key": "fullName", "label": "Full name", "type": "text", "gen": "name", "transform": "upper", "pattern": "^(AUTO|[A-Z][A-Z .'@/-]{4,39})$", "hint": "AUTO = a fresh person every run" },
+    { "key": "nric", "label": "NRIC (12 digits)", "type": "text", "gen": "nric", "pattern": "^(AUTO|[0-9]{12})$", "hint": "AUTO = a fresh NRIC every run" }
+  ],
+  "defaultScenarios": [
+    { "fullName": "AUTO", "nric": "AUTO" },
+    { "fullName": "AUTO", "nric": "AUTO" }
+  ],
+  "participantFields": [],
+  "defaultParticipant": {}
+}

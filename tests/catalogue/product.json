@@ -1,0 +1,136 @@
+{
+  "id": "catalogue",
+  "name": "All products (entry points)",
+  "description": "For every product on the site: the category page lists it, its button (Get Quote or Talk to Us) opens, the page it lands on loads, and it is the right page (online funnel path, or an enquiry form). No data is entered and nothing is submitted.",
+  "maxScenarios": 40,
+  "estSecondsPerScenario": 12,
+  "scenarioIdFrom": [
+    "entry"
+  ],
+  "scenarioFields": [
+    {
+      "key": "entry",
+      "label": "Product and button",
+      "type": "select",
+      "wide": true,
+      "options": [
+        "Car: Private Car Comprehensive Plus",
+        "Car: Comprehensive Private Car",
+        "Motorcycle: Motorcycle",
+        "Travel: Secure Travel",
+        "Travel: Kembara Umrah and Hajj",
+        "Travel: Kembara Plus Inbound & Outbound",
+        "Home: Home Protect",
+        "Home: Fire",
+        "Home: Houseowner / Householder",
+        "Personal Accident: Melindungi",
+        "Personal Accident: Bekerja",
+        "Personal Accident: Membantu",
+        "Personal Accident: Merawat",
+        "Personal Accident: Permata",
+        "Personal Accident: Perdana",
+        "Personal Accident: Personal Accident",
+        "Health: Direct Hospital Income Benefit",
+        "Health: Basic Critical Illness",
+        "Health: Medik",
+        "Hibah: Basic Term",
+        "Hibah: Bersama",
+        "Hibah: Dariku",
+        "Hibah: Preferred Term",
+        "Hibah: Value Term",
+        "Hibah: Mortgage Reducing Term (MRTT)",
+        "Savings: Savings Prime",
+        "Savings: Ilhamku",
+        "Savings: Impianku"
+      ]
+    }
+  ],
+  "defaultScenarios": [
+    {
+      "entry": "Car: Private Car Comprehensive Plus"
+    },
+    {
+      "entry": "Car: Comprehensive Private Car"
+    },
+    {
+      "entry": "Motorcycle: Motorcycle"
+    },
+    {
+      "entry": "Travel: Secure Travel"
+    },
+    {
+      "entry": "Travel: Kembara Umrah and Hajj"
+    },
+    {
+      "entry": "Travel: Kembara Plus Inbound & Outbound"
+    },
+    {
+      "entry": "Home: Home Protect"
+    },
+    {
+      "entry": "Home: Fire"
+    },
+    {
+      "entry": "Home: Houseowner / Householder"
+    },
+    {
+      "entry": "Personal Accident: Melindungi"
+    },
+    {
+      "entry": "Personal Accident: Bekerja"
+    },
+    {
+      "entry": "Personal Accident: Membantu"
+    },
+    {
+      "entry": "Personal Accident: Merawat"
+    },
+    {
+      "entry": "Personal Accident: Permata"
+    },
+    {
+      "entry": "Personal Accident: Perdana"
+    },
+    {
+      "entry": "Personal Accident: Personal Accident"
+    },
+    {
+      "entry": "Health: Direct Hospital Income Benefit"
+    },
+    {
+      "entry": "Health: Basic Critical Illness"
+    },
+    {
+      "entry": "Health: Medik"
+    },
+    {
+      "entry": "Hibah: Basic Term"
+    },
+    {
+      "entry": "Hibah: Bersama"
+    },
+    {
+      "entry": "Hibah: Dariku"
+    },
+    {
+      "entry": "Hibah: Preferred Term"
+    },
+    {
+      "entry": "Hibah: Value Term"
+    },
+    {
+      "entry": "Hibah: Mortgage Reducing Term (MRTT)"
+    },
+    {
+      "entry": "Savings: Savings Prime"
+    },
+    {
+      "entry": "Savings: Ilhamku"
+    },
+    {
+      "entry": "Savings: Impianku"
+    }
+  ],
+  "participantFields": [],
+  "defaultParticipant": {}
+}

@@ -1,0 +1,78 @@
+{
+  "title": "IKHLAS Funnel Monitor",
+  "products": {
+    "travel": "Travel (IKHLAS Secure Travel)",
+    "car": "Car (IKHLAS Motor Takaful)",
+    "catalogue": "All products (entry points)",
+    "motorcycle": "Motorcycle (IKHLAS Motorcycle Takaful)",
+    "basic-term": "Basic Term (IKHLAS Basic Term Takaful)",
+    "hib": "Hospital Income Benefit (Direct HIB)",
+    "home": "Home (IKHLAS Home Protect)",
+    "pa": "Personal Accident (6 plans)"
+  },
+  "historyRuns": 30,
+  "ignoredHttp": [
+    "/api/v1/customer/check/existing",
+    "/api/v2/motor/quotation/ism",
+    "processCustomer()",
+    "Unable to process customer",
+    "/api/v1/motor/wtp/ism"
+  ],
+  "slowRunMs": 180000,
+  "environments": {
+    "production": {
+      "label": "Production",
+      "baseUrl": "https://www.takaful-ikhlas.com.my"
+    },
+    "sandbox": {
+      "label": "Sandbox (development)",
+      "baseUrl": "https://sandbox.takaful-ikhlas.com.my"
+    }
+  },
+  "compare": {
+    "identicalBelowPct": 0.5,
+    "minorBelowPct": 5,
+    "heightMinorPct": 3,
+    "heightDifferentPct": 15
+  },
+  "screenshotMask": [
+    "img[alt=\"Lottie animation\"]",
+    "lottie-player",
+    "ng-lottie",
+    "canvas",
+    "video"
+  ],
+  "retention": {
+    "screenshotDays": 14,
+    "debugRuns": 3
+  },
+  "lines": {
+    "car": "Car",
+    "motorcycle": "Motorcycle",
+    "travel": "Travel",
+    "home": "Home",
+    "personal-accident": "Personal Accident",
+    "health": "Health & Medical",
+    "hibah": "Hibah & Protection",
+    "savings": "Savings"
+  },
+  "suites": {
+    "travel": "Quote journey",
+    "car": "Vehicle lookup",
+    "motorcycle": "Vehicle lookup",
+    "catalogue": "Entry points",
+    "basic-term": "Quote journey",
+    "hib": "Quote journey",
+    "home": "Quote journey",
+    "pa": "Quote journey"
+  },
+  "suiteLine": {
+    "travel": "travel",
+    "car": "car",
+    "motorcycle": "motorcycle",
+    "basic-term": "hibah",
+    "hib": "health",
+    "home": "home",
+    "pa": "personal-accident"
+  }
+}

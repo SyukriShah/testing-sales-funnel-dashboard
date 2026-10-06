@@ -1,0 +1,23 @@
+{
+  "id": "pa",
+  "name": "Personal Accident (6 plans)",
+  "description": "Quote journey for each IKHLAS Personal Accident plan with dummy data, up to the last page before payment.",
+  "maxScenarios": 6,
+  "estSecondsPerScenario": 120,
+  "scenarioFields": [
+    { "key": "plan", "label": "Plan", "type": "select", "options": ["Melindungi", "Bekerja", "Membantu", "Merawat", "Permata", "Perdana"] },
+    { "key": "fullName", "label": "Full name", "type": "text", "gen": "name", "transform": "upper", "pattern": "^(AUTO|[A-Z][A-Z .'@/-]{4,39})$", "hint": "AUTO = a fresh person every run" },
+    { "key": "nric", "label": "NRIC (12 digits)", "type": "text", "gen": "nric", "pattern": "^(AUTO|[0-9]{12})$", "hint": "AUTO = a fresh NRIC every run" }
+  ],
+  "scenarioIdFrom": ["plan"],
+  "defaultScenarios": [
+    { "plan": "Melindungi", "fullName": "AUTO", "nric": "AUTO" },
+    { "plan": "Bekerja", "fullName": "AUTO", "nric": "AUTO" },
+    { "plan": "Membantu", "fullName": "AUTO", "nric": "AUTO" },
+    { "plan": "Merawat", "fullName": "AUTO", "nric": "AUTO" },
+    { "plan": "Permata", "fullName": "AUTO", "nric": "AUTO" },
+    { "plan": "Perdana", "fullName": "AUTO", "nric": "AUTO" }
+  ],
+  "participantFields": [],
+  "defaultParticipant": {}
+}

@@ -1,0 +1,185 @@
+[
+  {
+    "label": "Car: Private Car Comprehensive Plus",
+    "category": "car-takaful",
+    "cta": "ikhlas-private-car-comprehensive-plus-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/motor/?$"
+  },
+  {
+    "label": "Car: Comprehensive Private Car",
+    "category": "car-takaful",
+    "cta": "ikhlas-comprehensive-private-car-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/motor/?$"
+  },
+  {
+    "label": "Motorcycle: Motorcycle",
+    "category": "motorcycle-takaful",
+    "cta": "ikhlas-motorcycle-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/motorcycle/?$"
+  },
+  {
+    "label": "Travel: Secure Travel",
+    "category": "travel-takaful",
+    "cta": "ikhlas-secure-travel-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/travel/?$"
+  },
+  {
+    "label": "Travel: Kembara Umrah and Hajj",
+    "category": "travel-takaful",
+    "cta": "ikhlas-kembara-umrah-hajj",
+    "kind": "funnel",
+    "note": "Opens on digital.takaful-ikhlas.com.my, a different host from the other funnels"
+  },
+  {
+    "label": "Travel: Kembara Plus Inbound & Outbound",
+    "category": "travel-takaful",
+    "cta": "ikhlas-kembara-plus-inbound-outbound",
+    "kind": "funnel",
+    "note": "Opens on digital.takaful-ikhlas.com.my, a different host from the other funnels"
+  },
+  {
+    "label": "Home: Home Protect",
+    "category": "home-takaful",
+    "cta": "ikhlas-home-protect-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/home/?$"
+  },
+  {
+    "label": "Home: Fire",
+    "category": "home-takaful",
+    "cta": "ikhlas-fire-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Home: Houseowner / Householder",
+    "category": "home-takaful",
+    "cta": "ikhlas-houseowner-householder-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Personal Accident: Melindungi",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-melindungi-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/melindungi/?$"
+  },
+  {
+    "label": "Personal Accident: Bekerja",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/bekerja/?$"
+  },
+  {
+    "label": "Personal Accident: Membantu",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-membantu-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/membantu/?$"
+  },
+  {
+    "label": "Personal Accident: Merawat",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-merawat-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/merawat/?$"
+  },
+  {
+    "label": "Personal Accident: Permata",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-permata-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/permata/?$"
+  },
+  {
+    "label": "Personal Accident: Perdana",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-perdana-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/pa/perdana/?$"
+  },
+  {
+    "label": "Personal Accident: Personal Accident",
+    "category": "personal-accident-takaful",
+    "cta": "personal-accident-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Health: Direct Hospital Income Benefit",
+    "category": "health-medical-takaful",
+    "cta": "direct-hospital-income-benefit",
+    "kind": "funnel",
+    "expectPath": "^/direct/hib/?$"
+  },
+  {
+    "label": "Health: Basic Critical Illness",
+    "category": "health-medical-takaful",
+    "cta": "ikhlas-basic-critical-illness-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Health: Medik",
+    "category": "health-medical-takaful",
+    "cta": "ikhlas-medik",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Hibah: Basic Term",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-basic-term-takaful",
+    "kind": "funnel",
+    "expectPath": "^/direct/ikhlas-basic-term-hibah-takaful/?$"
+  },
+  {
+    "label": "Hibah: Bersama",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-bersama",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Hibah: Dariku",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-dariku",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Hibah: Preferred Term",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-preferred-term-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Hibah: Value Term",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-value-term-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Hibah: Mortgage Reducing Term (MRTT)",
+    "category": "hibah-protection-takaful",
+    "cta": "ikhlas-mrtt",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Savings: Savings Prime",
+    "category": "savings-takaful",
+    "cta": "ikhlas-savings-prime-takaful",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Savings: Ilhamku",
+    "category": "savings-takaful",
+    "cta": "ikhlas-ilhamku",
+    "kind": "enquiry"
+  },
+  {
+    "label": "Savings: Impianku",
+    "category": "savings-takaful",
+    "cta": "ikhlas-impianku",
+    "kind": "enquiry"
+  }
+]

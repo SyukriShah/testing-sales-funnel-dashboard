@@ -1,0 +1,86 @@
+{
+  "id": "basic-term",
+  "name": "Basic Term (IKHLAS Basic Term Takaful)",
+  "description": "Quote journey for IKHLAS Basic Term Takaful with dummy data, up to the Summary page. PAY is never pressed.",
+  "maxScenarios": 6,
+  "estSecondsPerScenario": 60,
+  "scenarioFields": [
+    {
+      "key": "fullName",
+      "label": "Full name",
+      "type": "text",
+      "gen": "name",
+      "transform": "upper",
+      "pattern": "^(AUTO|[A-Z][A-Z .'@/-]{4,39})$",
+      "hint": "AUTO = a fresh person every run (the site refuses the same person twice)"
+    },
+    {
+      "key": "nric",
+      "label": "NRIC (12 digits)",
+      "type": "text",
+      "gen": "nric",
+      "pattern": "^(AUTO|[0-9]{12})$",
+      "hint": "AUTO = a fresh NRIC every run"
+    },
+    {
+      "key": "smoker",
+      "label": "Smoker?",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "No, I don't smoke",
+        "Yes, daily (less than 20 sticks)",
+        "Yes, daily (20 or more sticks)"
+      ]
+    },
+    {
+      "key": "incomeStatus",
+      "label": "Income status",
+      "type": "select",
+      "gen": "pick",
+      "options": [
+        "Income Earner",
+        "Non-Income Earner"
+      ]
+    },
+    {
+      "key": "occupation",
+      "label": "Occupation keyword",
+      "type": "text",
+      "pattern": "^[A-Za-z ]{3,30}$",
+      "hint": "typed into the occupation search; the first match is chosen"
+    },
+    {
+      "key": "income",
+      "label": "Net monthly income (RM)",
+      "type": "number",
+      "min": 500,
+      "max": 100000,
+      "gen": "range",
+      "genRange": [
+        2500,
+        12000
+      ]
+    }
+  ],
+  "defaultScenarios": [
+    {
+      "fullName": "AUTO",
+      "nric": "AUTO",
+      "smoker": "No, I don't smoke",
+      "incomeStatus": "Income Earner",
+      "occupation": "engineer",
+      "income": 5000
+    },
+    {
+      "fullName": "AUTO",
+      "nric": "AUTO",
+      "smoker": "No, I don't smoke",
+      "incomeStatus": "Income Earner",
+      "occupation": "accountant",
+      "income": 3800
+    }
+  ],
+  "participantFields": [],
+  "defaultParticipant": {}
+}

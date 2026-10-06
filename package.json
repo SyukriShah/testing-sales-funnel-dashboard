@@ -1,0 +1,26 @@
+{
+  "name": "e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "dashboard": "node scripts/build-dashboard.mjs",
+    "serve": "node scripts/serve.mjs",
+    "monitor": "playwright test; code=$?; node scripts/build-dashboard.mjs; node scripts/alert.mjs; node scripts/prune.mjs; exit $code",
+    "alert": "node scripts/alert.mjs",
+    "alert:check": "node scripts/alert.mjs --check",
+    "alert:test": "node scripts/alert.mjs --test",
+    "prune": "node scripts/prune.mjs",
+    "test:mobile": "VIEWPORT=mobile RUN_TRIGGER=mobile npx playwright test --project=production",
+    "export": "node scripts/export-site.mjs",
+    "publish:site": "node scripts/publish-site.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.0.0",
+    "nodemailer": "^6.10.1",
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0"
+  }
+}
