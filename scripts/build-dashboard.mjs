@@ -309,6 +309,16 @@ for (const p of Object.values(products)) {
   }
 }
 
+// Marketing tab data (GA4 + Windsor.ai) written by scripts/marketing.mjs. Ad spend and traffic stay local
+// unless marketing.config.json sets "shareMarketing": true, so the shared page never carries them by accident.
+function loadMarketing() {
+  const mc = JSON.parse(fs.readFileSync(path.join(root, 'marketing.config.json'), 'utf8'));
+  const f = path.join(root, '.local', 'marketing.json');
+  if (artifact && !mc.shareMarketing) return { hidden: true, checks: mc.checks };
+  if (!fs.existsSync(f)) return { missing: true, checks: mc.checks };
+  return { ...JSON.parse(fs.readFileSync(f, 'utf8')), checks: mc.checks };
+}
+
 const data = {
   title: cfg.title,
   generatedAt: new Date().toISOString(),
@@ -316,6 +326,7 @@ const data = {
   envs: envIds.map((id) => ({ id, ...cfg.environments[id] })),
   products: Object.values(products).sort((a, b) => (lineOrder.indexOf(a.id) + 1 || 99) - (lineOrder.indexOf(b.id) + 1 || 99)),
   comparisons: comparisons.slice(-20),
+  marketing: loadMarketing(),
 };
 
 // ---------- page ----------

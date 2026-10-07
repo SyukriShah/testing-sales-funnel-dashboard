@@ -252,6 +252,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/marketing/refresh') {
+    const origin = req.headers.origin;
+    if (origin && !hostOk(new URL(origin).host)) return sendJson(res, 403, { error: 'cross-site request refused' });
+    const q = new URL(req.url, 'http://x').searchParams;
+    const args = ['scripts/marketing.mjs', ...(q.get('sample') === '1' ? ['--sample'] : [])];
+    execFile(process.execPath, args, { cwd: root, timeout: 90_000 }, (err, out, errOut) => {
+      if (err) return sendJson(res, 500, { error: String(errOut || err.message).slice(0, 300) });
+      execFile(process.execPath, ['scripts/build-dashboard.mjs'], { cwd: root, timeout: 90_000 }, (e2) => sendJson(res, e2 ? 500 : 200, { ok: !e2, log: out.trim() }));
+    });
+    return;
+  }
+
   if (req.method === 'GET' && url.pathname === '/') { res.writeHead(302, { location: '/dashboard/index.html' }); return res.end(); }
   if (req.method === 'GET' && url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
 

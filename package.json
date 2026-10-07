@@ -13,6 +13,8 @@
     "alert:test": "node scripts/alert.mjs --test",
     "prune": "node scripts/prune.mjs",
     "test:mobile": "VIEWPORT=mobile RUN_TRIGGER=mobile npx playwright test --project=production",
+    "marketing": "node scripts/marketing.mjs && node scripts/build-dashboard.mjs",
+    "marketing:sample": "node scripts/marketing.mjs --sample && node scripts/build-dashboard.mjs",
     "export": "node scripts/export-site.mjs",
     "publish:site": "node scripts/publish-site.mjs"
   },

@@ -52,7 +52,7 @@ const latestBySuite = (p) => suitesOf(p).map((id) => basis(p).filter((r) => r.su
 // ---------- shell ----------
 function shell() {
   $('#gen').textContent = 'Updated ' + fmtT(D.generatedAt);
-  $('#tabs').innerHTML = [['monitor', 'Monitor'], ['insights', 'Insights'], ['compare', 'Compare environments'], ['run', 'Run tests']]
+  $('#tabs').innerHTML = [['monitor', 'Monitor'], ['insights', 'Insights'], ['marketing', 'Marketing'], ['compare', 'Compare environments'], ['run', 'Run tests']]
     .map(([id, t]) => `<button role="tab" data-v="${id}" aria-selected="${S.view === id}">${t}</button>`).join('')
     + (S.view === 'monitor'
       ? `<span class="envsw" role="group" aria-label="Environment">${D.envs.map((e) => `<button data-env="${e.id}" aria-pressed="${S.env === e.id}">${esc(e.label)}</button>`).join('')}</span>`
@@ -69,6 +69,7 @@ function render() {
   clearInterval(S.timer); S.timer = null;
   if (S.view === 'compare') return renderCompare();
   if (S.view === 'insights') return renderInsights();
+  if (S.view === 'marketing') return renderMarketing();
   renderMonitor();
 }
 
@@ -960,6 +961,139 @@ function paintShot() {
 function stepShot(d) { const box = document.getElementById('lightbox'); box._i = (box._i + d + box._g.length) % box._g.length; paintShot(); }
 function closeShot() { const box = document.getElementById('lightbox'); if (box) { box.classList.remove('open'); box.innerHTML = ''; } }
 
+
+// ---------- marketing: genuine traffic (GA4) and campaigns (Windsor.ai), pulled by scripts/marketing.mjs ----------
+const STAGES = [['funnel_start', 'Started'], ['plan_select', 'Plan chosen'], ['summary_view', 'Summary viewed'], ['pay_click', 'Pay clicked']];
+const sum = (a, f) => a.reduce((t, x) => t + (f ? f(x) : x), 0);
+const pct = (n, d) => (d ? Math.round((n / d) * 1000) / 10 : null);
+const fmtN = (n) => Math.round(n).toLocaleString();
+const fmtPct = (v) => (v == null ? '–' : v + '%');
+/** last 7 days of data vs the 7 before; dates are ISO strings so they compare as text */
+function windows(rows, last) {
+  const cut = (n) => { const d = new Date(last + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+  const a = cut(6), b = cut(13);
+  return { cur: rows.filter((r) => r.date >= a), prev: rows.filter((r) => r.date >= b && r.date < a) };
+}
+const change = (cur, prev) => (prev ? Math.round(((cur - prev) / prev) * 100) : null);
+const chg = (c, goodUp = true) => (c == null ? '' : `<span class="${(c >= 0) === goodUp ? '' : 'stale'}" style="font-size:12px">${c >= 0 ? '+' : ''}${c}% vs previous 7 days</span>`);
+const sourceHelp = {
+  ga4: ['Google Analytics 4', ['In GA4 Admin > Property details, copy the numeric Property ID into marketing.config.json (ga4.propertyId).', 'Create a service account in Google Cloud, enable the "Google Analytics Data API", and download its JSON key.', 'In GA4 Admin > Property access management, add the service account email as Viewer.', 'Put GA4_CREDENTIALS_FILE=/full/path/key.json in .env.local, then press Refresh data.']],
+  windsor: ['Windsor.ai', ['In Windsor.ai, link your data sources (Google Ads, Meta, TikTok and so on) under Data sources.', 'Copy the API key from Windsor.ai settings.', 'Put WINDSOR_API_KEY=... in .env.local, then press Refresh data.']],
+};
+
+function marketingChecks(m) {
+  const out = [], c = m.checks ?? { dropPct: 40, staleDays: 2 };
+  const days = (iso) => Math.floor((Date.now() - Date.parse(iso + 'T23:59:59Z')) / 86400000);
+  if (m.ga4?.status === 'ok') {
+    const last = m.ga4.daily.map((d) => d.date).sort().at(-1);
+    if (!last) out.push({ lvl: 'warn', msg: 'GA4 returned no sessions for this period.' });
+    else {
+      if (days(last) > c.staleDays) out.push({ lvl: 'fail', msg: `GA4 data stops at ${last}, ${days(last)} days ago. Check the tag and the property.` });
+      const w = windows(m.ga4.daily, last), cur = sum(w.cur, (r) => r.sessions), prev = sum(w.prev, (r) => r.sessions), ch = change(cur, prev);
+      if (ch != null && ch <= -c.dropPct) out.push({ lvl: 'fail', msg: `Sessions are down ${-ch}% on the previous 7 days.` });
+    }
+    const ev = m.ga4.events ?? [];
+    if (!ev.length) out.push({ lvl: 'warn', msg: 'No funnel events received yet. The sales site still needs to send them.' });
+    else for (const p of D.products) {
+      const rows = ev.filter((e) => e.product === p.id), latest = rows.map((r) => r.date).sort().at(-1);
+      if (!latest) continue;
+      const w = windows(rows.filter((r) => r.event === 'summary_view'), latest), cur = sum(w.cur, (r) => r.count), prev = sum(w.prev, (r) => r.count), ch = change(cur, prev);
+      if (ch != null && ch <= -c.dropPct) {
+        const syn = latestBySuite(p).some((r) => r.health === 'fail');
+        out.push({ lvl: 'fail', msg: `${p.name}: customers reaching Summary are down ${-ch}% on the previous 7 days.${syn ? ' The synthetic test is also failing, so this is likely a real outage.' : ' The synthetic test passes, so look at campaigns, traffic mix or tracking.'}`, product: p.id });
+      }
+    }
+  }
+  if (m.windsor?.status === 'ok' && m.windsor.daily.length) {
+    const last = m.windsor.daily.map((d) => d.date).sort().at(-1);
+    if (days(last) > c.staleDays) out.push({ lvl: 'fail', msg: `Windsor.ai data stops at ${last}. A connector may need re-authorising.` });
+    const w = windows(m.windsor.daily, last), cur = sum(w.cur, (r) => r.spend), prev = sum(w.prev, (r) => r.spend), ch = change(cur, prev);
+    if (ch != null && Math.abs(ch) >= 50) out.push({ lvl: 'warn', msg: `Ad spend moved ${ch > 0 ? '+' : ''}${ch}% on the previous 7 days. Confirm that is intended.` });
+  }
+  return out;
+}
+
+function bars(rows, key, last) {
+  const days = [...new Set(rows.map((r) => r.date))].sort();
+  const by = days.map((d) => sum(rows.filter((r) => r.date === d), (r) => r[key]));
+  const max = Math.max(1, ...by), w = 100 / Math.max(1, days.length);
+  return `<svg viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="${esc(key)} per day, ${days[0]} to ${days.at(-1)}" style="width:100%;height:70px">${by.map((v, i) => `<rect x="${(i * w + w * 0.12).toFixed(2)}" y="${(30 - (v / max) * 29).toFixed(2)}" width="${(w * 0.76).toFixed(2)}" height="${((v / max) * 29).toFixed(2)}" fill="var(--accent)" rx=".6"><title>${days[i]}: ${fmtN(v)}</title></rect>`).join('')}</svg>`;
+}
+
+function renderMarketing() {
+  const m = D.marketing ?? {};
+  const canRefresh = S.live;
+  const refresh = canRefresh ? `<button class="btn primary" id="mkrefresh">Refresh data</button> <button class="btn" id="mksample" title="Fills the tab with made-up numbers so you can review the layout. Never shared.">Preview with sample data</button>` : '<span class="mute">Refresh runs from the local dashboard (npm run serve).</span>';
+  const head = `<div class="strip pass"><div><h2>Marketing and genuine traffic</h2><div class="why">Real customer numbers from GA4 and campaign numbers from Windsor.ai, next to what the tests see.${m.generatedAt ? ' Data pulled ' + esc(fmtT(m.generatedAt)) + '.' : ''}</div></div><div>${refresh}</div></div>`;
+  const bind = () => {
+    const go = async (sample) => {
+      const b = $(sample ? '#mksample' : '#mkrefresh'); b.disabled = true; b.textContent = 'Working…';
+      try {
+        const r = await fetch('/api/marketing/refresh' + (sample ? '?sample=1' : ''), { method: 'POST' });
+        const j = await r.json();
+        D = await (await fetch('data.json', { cache: 'no-store' })).json();
+        toast(r.ok ? 'Marketing data updated' : 'Refresh failed: ' + (j.error ?? ''));
+      } catch { toast('Refresh failed. Is the local dashboard server running?'); }
+      render();
+    };
+    $('#mkrefresh') && ($('#mkrefresh').onclick = () => go(false));
+    $('#mksample') && ($('#mksample').onclick = () => go(true));
+  };
+  if (m.hidden) {
+    $('#main').innerHTML = head.replace(/<div>[^]*?<\/div><\/div>$/, '</div>') + `<div class="empty">Marketing numbers are not included in the shared page, because they contain traffic and ad spend. Open the local dashboard (http://127.0.0.1:4317, Marketing tab), or ask the owner to set <code>shareMarketing</code> in <code>marketing.config.json</code> once marketing agrees.</div>`;
+    return;
+  }
+  const card = (id) => {
+    const st = m[id] ?? { status: 'not-configured', message: 'No data pulled yet.' };
+    const [name, steps] = sourceHelp[id];
+    const pill = st.status === 'ok' ? '<span class="pill pass">Connected</span>' : st.status === 'error' ? '<span class="pill fail">Error</span>' : '<span class="pill custom">Not connected</span>';
+    return `<article class="panel" style="margin-top:12px"><h2>${name} ${pill}${m.sample ? ' <span class="pill warn">Sample data</span>' : ''}</h2><div class="panel-pad" style="padding-top:6px">
+      <div>${esc(st.message)}</div>${st.status === 'ok' ? '' : `<ol style="margin:8px 0 0;padding-left:20px;display:grid;gap:3px" class="mute">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`}</div></article>`;
+  };
+  const g = m.ga4?.status === 'ok' ? m.ga4 : null, w = m.windsor?.status === 'ok' ? m.windsor : null;
+  let body = '';
+  if (m.sample) body += `<div class="strip" style="margin-top:12px;border-left-color:var(--warn)"><div><h2 style="font-size:16px">Sample data</h2><div class="why">These numbers are made up, only to review the layout. Press Refresh data once GA4 and Windsor.ai are connected to replace them.</div></div></div>`;
+  const checks = marketingChecks(m);
+  body += `<div class="panel"><h2>Checks <span class="chip">${checks.length ? checks.length + ' to look at' : 'nothing flagged'}</span></h2><div class="panel-pad" style="padding-top:6px">${
+    checks.length ? checks.map((c) => `<div style="display:flex;gap:8px;align-items:baseline;padding:4px 0"><span class="pill ${c.lvl}">${c.lvl === 'fail' ? 'Act' : 'Look'}</span><span>${esc(c.msg)}</span>${c.product ? `<button class="btn" data-open="${c.product}" style="margin-left:auto">Test results ›</button>` : ''}</div>`).join('')
+      : (g || w) ? '<span class="mute">Data is fresh and no sharp drops were found.</span>' : '<span class="mute">Connect a source to start these checks: data freshness, sudden drops in sessions or in customers reaching Summary, ad spend jumps, and whether a drop matches a failing test.</span>'}</div></div>`;
+  if (g) {
+    const last = g.daily.map((d) => d.date).sort().at(-1);
+    const wd = windows(g.daily, last), ses = [sum(wd.cur, (r) => r.sessions), sum(wd.prev, (r) => r.sessions)];
+    const mob = pct(sum(wd.cur.filter((r) => r.device === 'mobile'), (r) => r.sessions), ses[0]);
+    const ev = g.events ?? [], we = windows(ev, last);
+    const cnt = (rows, e) => sum(rows.filter((r) => r.event === e), (r) => r.count);
+    const st = [cnt(we.cur, 'funnel_start'), cnt(we.prev, 'funnel_start')], sv = [cnt(we.cur, 'summary_view'), cnt(we.prev, 'summary_view')];
+    const tile = (t, v, sub) => `<div class="panel" style="margin:0;padding:14px 16px"><div class="mute" style="font-size:12px">${t}</div><div style="font-size:26px;font-weight:650;letter-spacing:-.01em">${v}</div><div>${sub}</div></div>`;
+    body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:20px">
+      ${tile('Sessions, last 7 days', fmtN(ses[0]), chg(change(...ses)))}
+      ${tile('Share on phones', fmtPct(mob), '<span class="mute" style="font-size:12px">of sessions</span>')}
+      ${tile('Quotes started', st[0] ? fmtN(st[0]) : '–', chg(change(...st)))}
+      ${tile('Start to Summary', fmtPct(pct(sv[0], st[0])), `<span class="mute" style="font-size:12px">previous ${fmtPct(pct(sv[1], st[1]))}</span>`)}</div>
+      <div class="panel"><h2>Sessions per day <span class="chip">${esc(m.range.from)} to ${esc(m.range.to)}</span></h2><div class="panel-pad">${bars(g.daily, 'sessions', last)}</div></div>`;
+    const prods = D.products.map((p) => ({ p, rows: we.cur.filter((r) => r.product === p.id) })).filter((x) => x.rows.length);
+    const cols = '--cols:minmax(150px,1.4fr) repeat(4,minmax(70px,1fr)) 80px 90px';
+    body += `<div class="panel"><h2>Funnel by product <span class="chip">last 7 days</span></h2><div class="sub2">Genuine customers only. Drop-off is measured from Started. Click a row to see what the tests say for the same product.</div>
+      <div class="gt" style="${cols}"><div class="gt-head"><span>Product</span>${STAGES.map(([, l]) => `<span class="r">${l}</span>`).join('')}<span class="r">Drop-off</span><span>Test</span></div>${
+        prods.length ? prods.map(({ p, rows }) => {
+          const c = STAGES.map(([e]) => cnt(rows, e)), tst = latestBySuite(p).map((r) => r.health);
+          return `<button class="gt-row" data-open="${p.id}"><span class="name">${esc(p.name)}</span>${c.map((n) => `<span class="num">${n ? fmtN(n) : '–'}</span>`).join('')}<span class="num">${c[0] ? fmtPct(Math.round((1 - c[2] / c[0]) * 1000) / 10) : '–'}</span><span class="pill ${tst.includes('fail') ? 'fail' : tst.includes('warn') ? 'warn' : tst.length ? 'pass' : 'custom'}">${tst.includes('fail') ? 'Failing' : tst.includes('warn') ? 'Warnings' : tst.length ? 'Passing' : 'None'}</span></button>`;
+        }).join('') : '<div class="empty" style="padding:20px">No funnel events by product yet. See the event list for the web team in the README (Marketing tab section).</div>'}</div></div>`;
+    body += `<div class="panel"><h2>Where sessions come from <span class="chip">GA4, ${esc(String(m.range.from))} to ${esc(String(m.range.to))}</span></h2><div class="gt" style="--cols:minmax(180px,2fr) 100px 100px"><div class="gt-head"><span>Source / medium</span><span class="r">Sessions</span><span class="r">Engaged</span></div>${g.sources.map((x) => `<div class="gt-row" style="cursor:default"><span class="name">${esc(x.source)}</span><span class="num">${fmtN(x.sessions)}</span><span class="num">${fmtPct(pct(x.engaged, x.sessions))}</span></div>`).join('')}</div></div>`;
+  }
+  if (w) {
+    const last = w.daily.map((d) => d.date).sort().at(-1), wd = windows(w.daily, last);
+    const spend = [sum(wd.cur, (r) => r.spend), sum(wd.prev, (r) => r.spend)], clicks = [sum(wd.cur, (r) => r.clicks), sum(wd.prev, (r) => r.clicks)];
+    body += `<div class="panel"><h2>Campaigns <span class="chip">Windsor.ai</span></h2><div class="sub2">Spend ${fmtN(spend[0])} ${chg(change(...spend), false)} · Clicks ${fmtN(clicks[0])} ${chg(change(...clicks))} (last 7 days). Table below covers the whole period.</div>
+      <div class="panel-pad" style="padding-top:0">${bars(w.daily, 'spend', last)}</div>
+      <div class="gt" style="--cols:minmax(100px,1fr) minmax(150px,2fr) 90px 90px 80px"><div class="gt-head"><span>Platform</span><span>Campaign</span><span class="r">Spend</span><span class="r">Clicks</span><span class="r">Cost/click</span></div>${w.campaigns.map((c) => `<div class="gt-row" style="cursor:default"><span>${esc(c.source)}</span><span class="name">${esc(c.campaign)}</span><span class="num">${fmtN(c.spend)}</span><span class="num">${fmtN(c.clicks)}</span><span class="num">${c.clicks ? (c.spend / c.clicks).toFixed(2) : '–'}</span></div>`).join('')}</div></div>`;
+  }
+  $('#main').innerHTML = head + `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">${card('ga4')}${card('windsor')}</div>` + body +
+    `<div class="panel"><h2>Privacy</h2><div class="panel-pad" style="padding-top:6px">Only daily totals are shown. No NRIC, passport, name or contact detail is pulled or stored. Keys stay in <code>.env.local</code> on the machine that refreshes the data, and this tab is left out of the shared page.</div></div>`;
+  bind();
+  document.querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => openProduct(b.dataset.open)));
+}
+
 // ---------- deep links: #monitor-car, #insights, #compare, #run (plain tokens, so they survive the shared viewer) ----------
 function syncHash() {
   const h = S.view === 'monitor' ? (S.selected ? 'monitor-' + S.selected : 'monitor') : S.view;
@@ -967,7 +1101,7 @@ function syncHash() {
 }
 function readHash() {
   const [v, ...rest] = location.hash.slice(1).split('-');
-  if (!['monitor', 'insights', 'compare', 'run'].includes(v)) return;
+  if (!['monitor', 'insights', 'marketing', 'compare', 'run'].includes(v)) return;
   S.view = v;
   const id = rest.join('-');
   if (v === 'monitor' && id && D.products.some((p) => p.id === id)) S.selected = id;

@@ -1,0 +1,17 @@
+{
+  "days": 28,
+  "shareMarketing": false,
+  "checks": { "dropPct": 40, "staleDays": 2 },
+  "ga4": {
+    "propertyId": "",
+    "credentialsFileEnv": "GA4_CREDENTIALS_FILE",
+    "events": ["funnel_start", "funnel_step", "plan_select", "summary_view", "pay_click", "funnel_error"],
+    "productDimension": "customEvent:product",
+    "stepDimension": "customEvent:step_name"
+  },
+  "windsor": {
+    "apiKeyEnv": "WINDSOR_API_KEY",
+    "connector": "all",
+    "fields": ["date", "source", "campaign", "spend", "clicks", "impressions"]
+  }
+}

@@ -101,3 +101,19 @@ Get Quote buttons open online funnels: car (2 products, one funnel), motorcycle,
 
 `npm run export` builds a static copy of the dashboard in `dashboard/site/`. `npm run publish:site` rebuilds it and copies it to `SITE_TARGET`.
 `hosting/` has an nginx config, a Dockerfile, a compose file and `HOSTING.md` (a checklist for IT: sign-in, HTTPS, network, refresh).
+
+## Marketing tab (genuine traffic)
+
+`npm run marketing` pulls read-only numbers from the **GA4 Data API** and the **Windsor.ai API** into `.local/marketing.json` and rebuilds the dashboard. The Marketing tab also has a **Refresh data** button on the local dashboard. `npm run marketing:sample` fills the tab with made-up numbers to preview the layout.
+
+- Setup: set `ga4.propertyId` in `marketing.config.json`; put `GA4_CREDENTIALS_FILE` (service-account JSON, Viewer on the property) and `WINDSOR_API_KEY` in `.env.local`. Neither is committed.
+- The tab is **left out of the shared page and the static export** unless `shareMarketing` is `true` in `marketing.config.json` (it holds traffic and ad spend).
+- Checks: data freshness, a sharp drop in sessions or in customers reaching Summary (and whether the synthetic test is failing too), ad spend jumps.
+- Events the web team sends to `dataLayer` (GTM forwards them to GA4). No personal data in any parameter.
+
+| Event | Parameters |
+|---|---|
+| `funnel_start`, `plan_select`, `summary_view`, `pay_click` | `product` |
+| `funnel_step`, `funnel_error` | `product`, `step_name` |
+
+`product` must be one of: `car`, `motorcycle`, `travel`, `home`, `personal-accident`, `health`, `hibah`, `savings`. Register `product` and `step_name` as custom dimensions in GA4 (Admin > Custom definitions), or the breakdown stays empty.
