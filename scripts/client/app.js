@@ -543,7 +543,7 @@ function renderRun() {
   const est = Math.ceil((md.scenarios.length * m.estSecondsPerScenario * runEnvList().length) / 60);
   const envOpts = [...D.envs.map((e) => [e.id, e.label]), ['both', 'Both (compare)']];
 
-  main.innerHTML = `
+  main.innerHTML = (S.debug ? `<section><h2>Debug mode is on</h2><p class="mute" style="margin:0">Server diagnostics show the browser, code version and recent run log, to find why a run fails on this machine.</p><div class="actions"><button class="btn" id="dbgrun">Show server diagnostics</button> <button class="btn" id="dbgcopy" hidden>Copy</button></div><pre class="log" id="dbgout" hidden style="white-space:pre-wrap;overflow:auto;max-height:420px"></pre></section>` : '') + `
     <div class="picker" role="group" aria-label="Product">${S.manifests.map((x) => `<button data-prod="${x.id}" aria-pressed="${x.id === S.product}" ${running ? 'disabled' : ''}>${esc(x.name)}</button>`).join('')}</div>
     <section><h2>Environment</h2>
       <div class="picker" role="group" aria-label="Environment" style="margin:0">${envOpts.map(([id, t]) => `<button data-renv="${id}" aria-pressed="${S.runEnv === id}" ${running ? 'disabled' : ''}>${esc(t)}</button>`).join('')}</div>
@@ -563,6 +563,14 @@ function renderRun() {
       <span class="mute">About ${est} min for ${md.scenarios.length} scenario(s) on ${runEnvList().map(envLabel).join(' and ')}. Stops on the Summary page, before payment.</span></div>
     <div id="live"></div>`;
 
+  if ($('#dbgrun')) $('#dbgrun').onclick = async () => {
+    const out = $('#dbgout'), cp = $('#dbgcopy');
+    try {
+      const d = await (await fetch('/api/debug', { cache: 'no-store' })).json();
+      out.textContent = (d.problems?.length ? 'PROBLEMS FOUND\n- ' + d.problems.join('\n- ') + '\n\n' : 'No obvious problems found.\n\n') + JSON.stringify(d, null, 2);
+    } catch { out.textContent = 'Could not read /api/debug. Start the server with: npm run serve:debug'; }
+    out.hidden = false; cp.hidden = false; cp.onclick = () => copyText(out.textContent, 'Diagnostics copied');
+  };
   document.querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => { selectProduct(b.dataset.prod); renderRun(); toast(b.textContent + ' ready with default data'); }));
   document.querySelectorAll('[data-renv]').forEach((b) => (b.onclick = () => { S.runEnv = b.dataset.renv; renderRun(); }));
   document.querySelectorAll('[data-s]').forEach((el) => (el.oninput = el.onchange = () => {
@@ -641,6 +649,7 @@ async function probe() {
     if (!res.ok) return;
     S.manifests = await res.json();
     S.live = true;
+    try { S.debug = (await fetch('/api/debug', { cache: 'no-store' })).ok; } catch { S.debug = false; }
     try { S.secrets = Object.fromEntries((await (await fetch('/api/secrets', { cache: 'no-store' })).json()).map((x) => [x.product, x])); } catch { /* none saved */ }
     try { D = await (await fetch('data.json', { cache: 'no-store' })).json(); } catch { /* embedded data is fine */ }
     await poll();
