@@ -1,15 +1,17 @@
 // Local control panel: serves the dashboard and starts test runs on demand.
-//   npm run serve   ->  http://127.0.0.1:4317
-// Binds to localhost only. Products come from tests/<product>/product.json; every submitted
+//   npm run serve        ->  http://127.0.0.1:4317
+//   HOST=0.0.0.0 npm run serve  ->  reachable on every interface / LAN IP
+// Products come from tests/<product>/product.json; every submitted
 // value is validated against that manifest and never reaches a shell.
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawn, execFile } from 'node:child_process';
 
 const root = path.resolve(import.meta.dirname, '..');
 const PORT = Number(process.env.PORT ?? 4317);
-const HOST = '127.0.0.1';
+const HOST = process.env.HOST ?? '127.0.0.1';
 const PLAYWRIGHT = path.join(root, 'node_modules', '.bin', 'playwright');
 const SECRETS_FILE = path.join(root, '.local', 'secrets.json');
 const readSecrets = () => { try { return JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf8')); } catch { return {}; } };
@@ -186,7 +188,22 @@ function progress() {
 // ---------- http ----------
 const TYPES = { '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.log': 'text/plain; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
 const sendJson = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(obj)); };
-const hostOk = (h) => h === `${HOST}:${PORT}` || h === `localhost:${PORT}`;
+// Hosts this machine answers to: loopback, the bind address, and every local interface address
+// (so LAN clients can hit http://<lan-ip>:4317). Anything else (foreign names) is still refused.
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', HOST, '0.0.0.0']);
+for (const list of Object.values(os.networkInterfaces())) {
+  for (const i of list ?? []) if (i?.address) { LOCAL_HOSTS.add(i.address); LOCAL_HOSTS.add(`[${i.address}]`); }
+}
+const hostOk = (h) => {
+  const s = String(h ?? '');
+  const at = s.lastIndexOf(':');
+  if (at < 1 || s.slice(at + 1) !== String(PORT)) return false;
+  const name = s.slice(0, at);
+  if (LOCAL_HOSTS.has(name)) return true;
+  // Raw IP literals always pass (covers interfaces that were down at startup);
+  // hostnames do not, which is what stops DNS rebinding.
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(name) || (name.startsWith('[') && name.endsWith(']'));
+};
 
 const server = http.createServer((req, res) => {
   // Reject foreign Host headers (DNS rebinding) and cross-site POSTs.
@@ -269,6 +286,18 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`IKHLAS Funnel Monitor: http://${HOST}:${PORT}   (Ctrl+C to stop)`);
+  console.log('IKHLAS Funnel Monitor (Ctrl+C to stop)');
+  for (const h of addressesForUrl()) console.log(`  http://${h}:${PORT}/`);
   rebuild();
 });
+
+function addressesForUrl() {
+  const out = [];
+  const push = (a) => { if (a && !out.includes(a)) out.push(a); };
+  if (HOST === '0.0.0.0' || HOST === '::') {
+    push('127.0.0.1');
+    for (const list of Object.values(os.networkInterfaces()))
+      for (const i of list ?? []) if (i?.address && !i.address.includes(':')) push(i.address);
+  } else push(HOST);
+  return out;
+}
