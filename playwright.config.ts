@@ -22,6 +22,11 @@ const envs = wanted.map((id) => {
 });
 
 // VIEWPORT=mobile runs every test in a phone-sized Chrome (Pixel 7); anything else is the desktop browser.
+// Google Chrome where it is installed (this Mac); otherwise Playwright's own Chromium (Linux servers, CI, containers).
+// Override with BROWSER_CHANNEL=chrome|msedge, or BROWSER_CHANNEL=chromium to force the bundled browser.
+const chromeInstalled = process.platform === 'darwin' || process.platform === 'win32' || fs.existsSync('/opt/google/chrome/chrome');
+const browserPick = process.env.BROWSER_CHANNEL ?? (chromeInstalled ? 'chrome' : 'chromium');
+const channel = browserPick === 'chromium' ? undefined : browserPick;
 const device = process.env.VIEWPORT === 'mobile' ? devices['Pixel 7'] : devices['Desktop Chrome'];
 
 export default defineConfig({
@@ -46,6 +51,6 @@ export default defineConfig({
   projects: envs.map((e) => ({
     name: e.id,
     metadata: { env: e.id },
-    use: { ...device, channel: 'chrome', baseURL: e.baseURL },
+    use: { ...device, channel, baseURL: e.baseURL },
   })),
 });

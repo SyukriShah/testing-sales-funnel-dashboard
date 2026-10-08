@@ -117,3 +117,7 @@ Get Quote buttons open online funnels: car (2 products, one funnel), motorcycle,
 | `funnel_step`, `funnel_error` | `product`, `step_name` |
 
 `product` must be one of: `car`, `motorcycle`, `travel`, `home`, `personal-accident`, `health`, `hibah`, `savings`. Register `product` and `step_name` as custom dimensions in GA4 (Admin > Custom definitions), or the breakdown stays empty.
+
+## Running the tests on a Linux server or CI
+
+The tests use Google Chrome where it is installed (macOS, Windows, or `/opt/google/chrome/chrome`) and fall back to Playwright's own Chromium otherwise. On a new Linux machine run once: `npx playwright install --with-deps chromium`. To force a browser: `BROWSER_CHANNEL=chromium|chrome|msedge`.
