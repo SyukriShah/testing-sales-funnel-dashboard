@@ -8,6 +8,7 @@
     "dashboard": "node scripts/build-dashboard.mjs",
     "serve": "node scripts/serve.mjs",
     "serve:debug": "node scripts/serve.mjs --debug",
+    "serve:all": "HOST=0.0.0.0 node scripts/serve.mjs",
     "monitor": "playwright test; code=$?; node scripts/build-dashboard.mjs; node scripts/alert.mjs; node scripts/prune.mjs; exit $code",
     "alert": "node scripts/alert.mjs",
     "alert:check": "node scripts/alert.mjs --check",
