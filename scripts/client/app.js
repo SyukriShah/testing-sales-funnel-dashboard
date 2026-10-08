@@ -151,7 +151,7 @@ function renderMonitor() {
     const suites = x.latest.map((r) => r.suiteName).join(' + ');
     return `<button class="gt-row" data-p="${x.p.id}" aria-selected="${x.p.id === S.selected}">
       <span><span class="pill ${x.health}">${label[x.health]}</span></span>
-      <span class="name">${esc(x.p.name)} <span class="mute" style="font-weight:400;font-size:12px">${esc(suites)}</span></span>
+      <span class="name">${esc(x.p.name)} <span class="mute" style="font-weight:400;font-size:14px">${esc(suites)}</span></span>
       <span class="runs-strip hide-s" title="last ${x.b.length} runs, oldest to newest">${x.b.slice(-30).map((r) => `<i class="${r.health}" title="${esc(fmtT(r.startedAt))}: ${esc(r.suiteName)} ${r.passed}/${r.total}"></i>`).join('')}</span>
       <span class="num hide-s">${Math.round((x.b.filter((r) => r.health !== 'fail').length / x.b.length) * 100)}%</span>
       <span class="num">${passed}/${total}</span>
@@ -168,8 +168,8 @@ function renderMonitor() {
         <div><b>${ago(newest)}</b><span>last run · ${esc(envLabel(S.env))}</span></div>
       </div>
     </div>
-    ${stale.length ? `<p class="chip warn" style="margin:12px 0 0">No run in the last ${STALE_H} h for ${stale.map((x) => esc(x.p.name)).join(', ')}. Is the schedule running?</p>` : ''}
-    <div class="panel"><h2>Products <span class="chip">${esc(envLabel(S.env))}</span><span class="mute" style="font-weight:400;font-size:12px">Click a product to see its results below</span></h2>
+    ${stale.length ? `<p class="chip warn" style="margin:8px 0 0">No run in the last ${STALE_H} h for ${stale.map((x) => esc(x.p.name)).join(', ')}. Is the schedule running?</p>` : ''}
+    <div class="panel"><h2>Products <span class="chip">${esc(envLabel(S.env))}</span><span class="mute" style="font-weight:400;font-size:14px">Click a product to see its results below</span></h2>
       <div class="gt t-prod" style="${prodCols}">
         <div class="gt-head"><span>Status</span><span>Product</span><span class="hide-s">Last runs</span><span class="r hide-s">Availability</span><span class="r">Scenarios</span><span class="r hide-s">Duration</span><span class="r">Last run</span></div>
         ${prodRows || '<div class="gt-row" style="cursor:default"><span class="mute">No product has this status.</span></div>'}</div>
@@ -185,7 +185,7 @@ function renderMonitor() {
 function dataUsed(run) {
   if (!run.data) return '';
   const p = run.data.participant, f = run.data.flight;
-  return `<p class="note" style="margin:0 16px 12px"><b>Custom test data</b> - ${esc(p.fullName)}, NRIC ${esc(p.nric)}, ${esc(p.mobile)}, ${esc(p.email)}, postcode ${esc(p.postcode)}; ${esc(f.carrier)} ${esc(f.outboundNo)} / ${esc(f.returnNo)}; ${esc(run.data.bank?.bankName || '')}</p>`;
+  return `<p class="note" style="margin:0 16px 8px"><b>Custom test data</b> - ${esc(p.fullName)}, NRIC ${esc(p.nric)}, ${esc(p.mobile)}, ${esc(p.email)}, postcode ${esc(p.postcode)}; ${esc(f.carrier)} ${esc(f.outboundNo)} / ${esc(f.returnNo)}; ${esc(run.data.bank?.bankName || '')}</p>`;
 }
 
 const prettyScenario = (id) => {
@@ -210,7 +210,7 @@ function heatPanel(p, run) {
   return `<div class="panel"><h2>${esc(run.suiteName)} <span class="pill ${run.health}">${label[run.health]}</span><span class="chip">${esc(run.runId)}</span><span class="chip">${esc(ago(run.startedAt))}</span>${run.device === 'mobile' ? '<span class="pill custom">phone size</span>' : run.custom ? '<span class="pill custom">custom data</span>' : ''}</h2>
       <div class="sub2">${esc(p.name)} on ${esc(envLabel(run.env))}, ${esc(run.baseUrl)}. Each cell is how long that step took to reach. Click a row for details.</div>
       ${dataUsed(run)}
-      ${run.results.some((r) => r.sensitive) ? '<p class="note" style="margin:0 16px 12px"><b>Saved test record used.</b> Its screenshots are shown here only; they are left out of the shared dashboard link.</p>' : ''}
+      ${run.results.some((r) => r.sensitive) ? '<p class="note" style="margin:0 16px 8px"><b>Saved test record used.</b> Its screenshots are shown here only; they are left out of the shared dashboard link.</p>' : ''}
       <div class="heat"><div class="gt t-heat" style="${heatCols}"><div class="gt-head"><span>Scenario</span>${cols.map((c) => `<span style="text-align:center" title="${esc(c)}">${esc(stepLabel(c))}</span>`).join('')}<span class="r">Result</span></div>${heatRows}</div></div>
       <div class="legend"><span><i class="ok"></i>reached (time)</span><span><i class="fail"></i>journey stopped here</span><span><i class="skip"></i>not reached</span><span><i class="na"></i>not in this scenario</span></div></div>`;
 }
@@ -250,11 +250,11 @@ function detail() {
     <div class="panel"><h2>Run history <span class="chip">${esc(p.name)}</span><span class="chip">${esc(envLabel(S.env))}</span></h2>
       <div class="filters" role="group" aria-label="Filter runs">${[['all', 'All'], ['scheduled', 'Regular'], ['custom', 'Custom data']].map(([k, t]) => `<button data-hf="${k}" aria-pressed="${S.histFilter === k}">${t}</button>`).join('')}</div>
       <div class="filters" role="group" aria-label="Search by date and result" style="align-items:center;flex-wrap:wrap">
-        <label class="mute" for="hf-from">From</label><input type="date" id="hf-from" value="${esc(S.histFrom ?? '')}" style="font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:3px 8px">
-        <label class="mute" for="hf-to">To</label><input type="date" id="hf-to" value="${esc(S.histTo ?? '')}" style="font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:3px 8px">
+        <label class="mute" for="hf-from">From</label><input type="date" id="hf-from" value="${esc(S.histFrom ?? '')}" style="font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:var(--r-ctl);padding:3px 8px">
+        <label class="mute" for="hf-to">To</label><input type="date" id="hf-to" value="${esc(S.histTo ?? '')}" style="font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:var(--r-ctl);padding:3px 8px">
         ${[['', 'Any result'], ['pass', 'Passed / warnings'], ['fail', 'Failed']].map(([k, t]) => `<button data-hr="${k}" aria-pressed="${(S.histResult ?? '') === k}">${t}</button>`).join('')}
         ${narrowed ? '<button id="hf-clear">Clear</button>' : ''}
-        <span class="mute" style="font-size:12px">${hist.length} of ${list.length} runs</span>
+        <span class="mute" style="font-size:14px">${hist.length} of ${list.length} runs</span>
       </div>
       <div class="gt t-hist" style="${histCols}"><div class="gt-head"><span>Run</span><span>Suite</span><span class="hide-s">When</span><span class="hide-s">Type</span><span class="r">Duration</span><span>Result</span><span class="hide-s">Relative</span></div>${histRows || '<div class="gt-row" style="cursor:default"><span class="mute">No runs match these filters. Try a wider date range.</span></div>'}</div>
       ${hist.length > 12 ? `<div class="panel-pad"><button class="btn" id="histmore">${showAll ? 'Show fewer' : 'Show all ' + hist.length}</button></div>` : ''}</div>`;
@@ -395,11 +395,11 @@ function renderCompare() {
         <div class="tile fail"><b>${m.different}</b><span>different</span></div>
         <div class="tile"><b>${m.incomplete}</b><span>incomplete</span></div>
       </div>
-      <div class="kv" style="margin-top:10px"><span>Flow differences <b>${m.flowDifferent}</b></span><span>Data differences <b>${m.factsDifferent}</b></span><span>Design differences <b>${m.designDifferent}</b> (${m.designMinor} minor)</span></div>
+      <div class="kv" style="margin-top:8px"><span>Flow differences <b>${m.flowDifferent}</b></span><span>Data differences <b>${m.factsDifferent}</b></span><span>Design differences <b>${m.designDifferent}</b> (${m.designMinor} minor)</span></div>
       ${top.length ? `<p><b>Main differences</b></p><ul>${top.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p>No differences found between the two environments.</p>'}
       <div class="actions"><button class="btn" id="copysum">Copy summary</button>${S.live ? `<a class="btn" href="${esc(c.reportPath)}" target="_blank">Open full report (.md)</a>` : ''}</div>
-      <p class="mute" style="margin:10px 0 0">Under 0.5% of pixels different counts as identical and under 5% as minor; a page height gap under 3% is ignored and over 15% counts as different. Animated regions are masked. Dates, prices and rotating content can still cause small differences.</p></section>
-    <div class="panel"><h2>Scenarios <button class="btn" id="cmpall" style="margin-left:auto;padding:4px 12px">Expand all</button></h2><div class="gt t-cmp" style="${cmpCols}"><div class="gt-head"><span>Scenario</span><span>Overall</span><span class="hide-s">Flow</span><span class="hide-s">Data</span><span>Design</span></div>${rows}</div></div>
+      <p class="mute" style="margin:8px 0 0">Under 0.5% of pixels different counts as identical and under 5% as minor; a page height gap under 3% is ignored and over 15% counts as different. Animated regions are masked. Dates, prices and rotating content can still cause small differences.</p></section>
+    <div class="panel"><h2>Scenarios <button class="btn" id="cmpall" style="margin-left:auto;padding:4px 8px">Expand all</button></h2><div class="gt t-cmp" style="${cmpCols}"><div class="gt-head"><span>Scenario</span><span>Overall</span><span class="hide-s">Flow</span><span class="hide-s">Data</span><span>Design</span></div>${rows}</div></div>
     ${list.length > 1 ? `<section><h2>Earlier comparisons</h2><table><tbody>${list.map((x) => `<tr class="row" data-cr="${x.runId}"><td>${esc(x.runId)}</td><td>${fmtT(x.startedAt)}</td><td>${x.summary.identical}/${x.summary.scenarios} identical</td></tr>`).join('')}</tbody></table></section>` : ''}`;
   document.querySelectorAll('[data-cp]').forEach((b) => (b.onclick = () => { S.cmpProduct = b.dataset.cp; S.cmpRun = null; renderCompare(); toast('Showing ' + b.textContent); }));
   document.querySelectorAll('.gt-row[data-c]').forEach((b) => (b.onclick = () => { const d = document.getElementById(b.dataset.c); d.hidden = !d.hidden; b.setAttribute('aria-expanded', String(!d.hidden)); b.querySelector('.chev').textContent = d.hidden ? '▸' : '▾'; if (!d.hidden) focusOn(b); }));
@@ -798,7 +798,7 @@ function journeyStats(run) {
 
 function renderInsights() {
   const v = S.insightView || 'perf';
-  const seg = `<div class="filters" style="padding:0 0 12px" role="group" aria-label="Insights view"><button data-iv="perf" aria-pressed="${v === 'perf'}">Performance and fixes</button><button data-iv="design" aria-pressed="${v === 'design'}">Funnel design recommendations</button><button data-iv="phone" aria-pressed="${v === 'phone'}">Phone size</button></div>`;
+  const seg = `<div class="filters" style="padding:0 0 8px" role="group" aria-label="Insights view"><button data-iv="perf" aria-pressed="${v === 'perf'}">Performance and fixes</button><button data-iv="design" aria-pressed="${v === 'design'}">Funnel design recommendations</button><button data-iv="phone" aria-pressed="${v === 'phone'}">Phone size</button></div>`;
   if (v === 'design') return renderDesignRecs(seg);
   if (v === 'phone') return renderPhone(seg);
   const rows = [];
@@ -811,7 +811,7 @@ function renderInsights() {
   const waitiest = rows.slice().sort((a, b) => b.st.wait - a.st.wait)[0];
   const cols = '--cols:minmax(150px,1.3fr) 70px 90px 130px minmax(120px,1fr) 80px';
   const body = rows.map(({ p, run, st }) => `<button class="gt-row" data-open="${p.id}" aria-label="Open ${esc(p.name)} results">
-      <span class="name">${esc(p.name)} <span class="mute" style="font-weight:400;font-size:12px">${esc(run.suiteName)}</span></span>
+      <span class="name">${esc(p.name)} <span class="mute" style="font-weight:400;font-size:14px">${esc(run.suiteName)}</span></span>
       <span class="num">${st.pages}</span><span class="num">${st.entries}</span>
       <span class="num" title="Time from pressing the next button to the next page appearing, all steps added up">${fmtS(st.wait)}</span>
       <span title="Slowest single step">${fmtS(st.slow.s)} <span class="mute">${esc(st.slow.at.slice(0, 28))}</span></span>
@@ -820,7 +820,7 @@ function renderInsights() {
   const order = ['High', 'Medium', 'Governance', 'Good'];
   const idOf = (line) => D.products.find((q) => line.startsWith(q.name))?.id;
   const counts = Object.fromEntries(order.map((k) => [k, INSIGHT_NOTES.filter((n) => n.pri === k).length]));
-  const notes = INSIGHT_NOTES.filter((n) => !S.insightPri || n.pri === S.insightPri).slice().sort((a, b) => order.indexOf(a.pri) - order.indexOf(b.pri)).map((n) => `<article class="panel" style="margin-top:12px"><h2><span class="pill ${tag[n.pri]}">${n.pri}</span>${esc(n.title)}<span class="chip">${esc(n.line)}</span></h2>
+  const notes = INSIGHT_NOTES.filter((n) => !S.insightPri || n.pri === S.insightPri).slice().sort((a, b) => order.indexOf(a.pri) - order.indexOf(b.pri)).map((n) => `<article class="panel" style="margin-top:8px"><h2><span class="pill ${tag[n.pri]}">${n.pri}</span>${esc(n.title)}<span class="chip">${esc(n.line)}</span></h2>
       <div class="panel-pad" style="display:grid;gap:8px;padding-top:8px">
         <div><b>What the tests saw.</b> ${esc(n.seen)}</div>
         <div><b>Suggestion.</b> ${esc(n.idea)}</div>
@@ -832,11 +832,11 @@ function renderInsights() {
     <div class="panel"><h2>Journey effort <span class="chip">${esc(envLabel('production'))}</span><span class="chip">latest regular run</span></h2>
       <div class="sub2">Measured from the test logs, up to the Summary page. Entries are the fields the test had to fill. Wait is the time the site took to show the next page; it does not include typing time.</div>
       <div class="gt" style="${cols}"><div class="gt-head"><span>Journey</span><span class="r">Pages</span><span class="r">Entries</span><span class="r">Wait total</span><span>Slowest step (worst plan)</span><span class="r">Errors</span></div>${body || '<div class="gt-row" style="cursor:default"><span class="mute">No journey runs yet.</span></div>'}</div></div>
-    <h3 id="notes" style="margin:24px 0 0;font-size:15px">Notes and suggestions</h3>
+    <h3 id="notes" style="margin:24px 0 0;font-size:16px">Notes and suggestions</h3>
     <div class="filters" style="padding:8px 0 0" role="group" aria-label="Filter notes by priority"><button data-ip="" aria-pressed="${!S.insightPri}">All ${INSIGHT_NOTES.length}</button>${order.map((k) => `<button data-ip="${k}" aria-pressed="${S.insightPri === k}">${k} ${counts[k]}</button>`).join('')}</div>
     <p class="mute" style="margin:4px 0 0">Written from the runs of 2 Oct 2026. They are suggestions to take to the product, security and compliance owners.</p>
     ${notes}
-    <div class="panel" style="margin-top:16px"><h2>What these tests cannot tell you</h2><div class="panel-pad"><ul style="margin:0;padding-left:18px;display:grid;gap:4px">
+    <div class="panel" style="margin-top:16px"><h2>What these tests cannot tell you</h2><div class="panel-pad"><ul style="margin:0;padding-left:16px;display:grid;gap:4px">
       <li>How many real customers start and finish each journey, or where they drop out. That needs the analytics numbers.</li>
       <li>How it feels on a phone or a slow connection. Tests run on a desktop browser on a fast network.</li>
       <li>Whether the site is secure. The tests only watch behaviour on the surface and never press payment. A proper security review is separate.</li>
@@ -873,7 +873,7 @@ function renderPhone(seg) {
   }
   const cols = '--cols:minmax(150px,1.2fr) 90px 110px 110px 120px 90px 90px';
   const body = rows.map(({ p, run, desk, st }) => `<button class="gt-row" data-open="${p.id}" aria-label="Open ${esc(p.name)} results">
-      <span class="name">${esc(p.name)} <span class="mute" style="font-weight:400;font-size:12px">${esc(run.suiteName)}</span></span>
+      <span class="name">${esc(p.name)} <span class="mute" style="font-weight:400;font-size:14px">${esc(run.suiteName)}</span></span>
       <span><span class="pill ${run.health}">${run.passed}/${run.total}</span></span>
       <span class="num ${st.overflow ? 'stale' : ''}" title="Screens that scroll sideways">${st.overflow} of ${st.pages}</span>
       <span class="num ${st.small ? 'stale' : ''}" title="Worst screen: tap targets under 24 px (WCAG 2.2 minimum)">${st.small}</span>
@@ -884,7 +884,7 @@ function renderPhone(seg) {
   const issues = rows.filter((x) => x.st.overflow || x.st.small || x.st.noHint.length || x.st.smallText.length);
   const list = (title, key, hint) => {
     const all = rows.flatMap((x) => x.st[key].map((n) => `${x.p.name}: ${n}`));
-    return all.length ? `<div class="panel" style="margin-top:12px"><h2>${title} <span class="chip">${all.length}</span></h2><div class="panel-pad"><div class="sub2" style="padding:0 0 8px">${hint}</div><ul style="margin:0;padding-left:18px;display:grid;gap:2px">${all.slice(0, 24).map((n) => `<li>${esc(n)}</li>`).join('')}</ul></div></div>` : '';
+    return all.length ? `<div class="panel" style="margin-top:8px"><h2>${title} <span class="chip">${all.length}</span></h2><div class="panel-pad"><div class="sub2" style="padding:0 0 8px">${hint}</div><ul style="margin:0;padding-left:16px;display:grid;gap:2px">${all.slice(0, 24).map((n) => `<li>${esc(n)}</li>`).join('')}</ul></div></div>` : '';
   };
   $('#main').innerHTML = seg + (rows.length ? `
     <div class="strip ${total.ok === total.n ? 'pass' : 'fail'}"><div><h2>${total.ok} of ${total.n} journeys completed on a phone</h2>
@@ -903,23 +903,23 @@ function renderPhone(seg) {
 
 function renderDesignRecs(seg) {
   const tag = { High: 'fail', Medium: 'warn' };
-  const cards = DESIGN_RECS.map((r) => `<article class="panel" style="margin-top:12px"><h2><span class="pill ${tag[r.pri]}">${r.pri}</span>${esc(r.title)}</h2>
+  const cards = DESIGN_RECS.map((r) => `<article class="panel" style="margin-top:8px"><h2><span class="pill ${tag[r.pri]}">${r.pri}</span>${esc(r.title)}</h2>
     <div class="panel-pad" style="display:grid;gap:8px;padding-top:8px">
       <div><b>Our funnel.</b> ${esc(r.ours)}</div>
       <div><b>Others and guidance.</b> ${esc(r.bench)}</div>
       <div><b>Recommendation.</b> ${esc(r.do)}</div>
       <div class="mute"><b>Security and governance.</b> ${esc(r.guard)}</div>
-      <div class="mute" style="font-size:12px">Sources: ${r.src.map((k) => `<a href="${SRC[k][1]}" target="_blank" rel="noopener">${esc(SRC[k][0])}</a>`).join(' · ')}</div></div></article>`).join('');
+      <div class="mute" style="font-size:14px">Sources: ${r.src.map((k) => `<a href="${SRC[k][1]}" target="_blank" rel="noopener">${esc(SRC[k][0])}</a>`).join(' · ')}</div></div></article>`).join('');
   $('#main').innerHTML = seg + `
     <div class="strip pass"><div><h2>Making it quicker and easier to buy</h2>
       <div class="why">${DESIGN_RECS.length} recommendations for the sales funnels, compared with public information from other Malaysian insurers and general insurance UX guidance.</div></div></div>
-    <div class="panel"><h2>How to read this</h2><div class="panel-pad"><ul style="margin:0;padding-left:18px;display:grid;gap:4px">
+    <div class="panel"><h2>How to read this</h2><div class="panel-pad"><ul style="margin:0;padding-left:16px;display:grid;gap:4px">
       <li>"Our funnel" comes from the test screenshots and logs of 2 Oct 2026.</li>
       <li>The other insurers' funnels were not walked through. What is quoted is what their public pages say. Their real purchase screens may differ.</li>
       <li>Some sources are vendor blogs. Where a figure is a vendor claim, it says so.</li>
       <li>Before changing a field or a wording, product, compliance and data protection owners need to approve it.</li></ul></div></div>
     ${cards}
-    <div class="panel" style="margin-top:16px"><h2>Suggested measures once changes ship</h2><div class="panel-pad"><ul style="margin:0;padding-left:18px;display:grid;gap:4px">
+    <div class="panel" style="margin-top:16px"><h2>Suggested measures once changes ship</h2><div class="panel-pad"><ul style="margin:0;padding-left:16px;display:grid;gap:4px">
       <li>Entries before the Summary page (now 8 to 32 depending on the product).</li>
       <li>Time to the Summary page, and the longest wait after pressing Continue.</li>
       <li>Share of customers who reach each step and who finish. This needs your analytics numbers, which these tests cannot see.</li>
@@ -975,7 +975,7 @@ function windows(rows, last) {
   return { cur: rows.filter((r) => r.date >= a), prev: rows.filter((r) => r.date >= b && r.date < a) };
 }
 const change = (cur, prev) => (prev ? Math.round(((cur - prev) / prev) * 100) : null);
-const chg = (c, goodUp = true) => (c == null ? '' : `<span class="${(c >= 0) === goodUp ? '' : 'stale'}" style="font-size:12px">${c >= 0 ? '+' : ''}${c}% vs previous 7 days</span>`);
+const chg = (c, goodUp = true) => (c == null ? '' : `<span class="${(c >= 0) === goodUp ? '' : 'stale'}" style="font-size:14px">${c >= 0 ? '+' : ''}${c}% vs previous 7 days</span>`);
 const sourceHelp = {
   ga4: ['Google Analytics 4', ['In GA4 Admin > Property details, copy the numeric Property ID into marketing.config.json (ga4.propertyId).', 'Create a service account in Google Cloud, enable the "Google Analytics Data API", and download its JSON key.', 'In GA4 Admin > Property access management, add the service account email as Viewer.', 'Put GA4_CREDENTIALS_FILE=/full/path/key.json in .env.local, then press Refresh data.']],
   windsor: ['Windsor.ai', ['In Windsor.ai, link your data sources (Google Ads, Meta, TikTok and so on) under Data sources.', 'Copy the API key from Windsor.ai settings.', 'Put WINDSOR_API_KEY=... in .env.local, then press Refresh data.']],
@@ -1047,12 +1047,12 @@ function renderMarketing() {
     const st = m[id] ?? { status: 'not-configured', message: 'No data pulled yet.' };
     const [name, steps] = sourceHelp[id];
     const pill = st.status === 'ok' ? '<span class="pill pass">Connected</span>' : st.status === 'error' ? '<span class="pill fail">Error</span>' : '<span class="pill custom">Not connected</span>';
-    return `<article class="panel" style="margin-top:12px"><h2>${name} ${pill}${m.sample ? ' <span class="pill warn">Sample data</span>' : ''}</h2><div class="panel-pad" style="padding-top:6px">
-      <div>${esc(st.message)}</div>${st.status === 'ok' ? '' : `<ol style="margin:8px 0 0;padding-left:20px;display:grid;gap:3px" class="mute">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`}</div></article>`;
+    return `<article class="panel" style="margin-top:8px"><h2>${name} ${pill}${m.sample ? ' <span class="pill warn">Sample data</span>' : ''}</h2><div class="panel-pad" style="padding-top:6px">
+      <div>${esc(st.message)}</div>${st.status === 'ok' ? '' : `<ol style="margin:8px 0 0;padding-left:24px;display:grid;gap:3px" class="mute">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`}</div></article>`;
   };
   const g = m.ga4?.status === 'ok' ? m.ga4 : null, w = m.windsor?.status === 'ok' ? m.windsor : null;
   let body = '';
-  if (m.sample) body += `<div class="strip" style="margin-top:12px;border-left-color:var(--warn)"><div><h2 style="font-size:16px">Sample data</h2><div class="why">These numbers are made up, only to review the layout. Press Refresh data once GA4 and Windsor.ai are connected to replace them.</div></div></div>`;
+  if (m.sample) body += `<div class="strip" style="margin-top:8px;border-left-color:var(--strong)"><div><h2 style="font-size:16px">Sample data</h2><div class="why">These numbers are made up, only to review the layout. Press Refresh data once GA4 and Windsor.ai are connected to replace them.</div></div></div>`;
   const checks = marketingChecks(m);
   body += `<div class="panel"><h2>Checks <span class="chip">${checks.length ? checks.length + ' to look at' : 'nothing flagged'}</span></h2><div class="panel-pad" style="padding-top:6px">${
     checks.length ? checks.map((c) => `<div style="display:flex;gap:8px;align-items:baseline;padding:4px 0"><span class="pill ${c.lvl}">${c.lvl === 'fail' ? 'Act' : 'Look'}</span><span>${esc(c.msg)}</span>${c.product ? `<button class="btn" data-open="${c.product}" style="margin-left:auto">Test results ›</button>` : ''}</div>`).join('')
@@ -1064,12 +1064,12 @@ function renderMarketing() {
     const ev = g.events ?? [], we = windows(ev, last);
     const cnt = (rows, e) => sum(rows.filter((r) => r.event === e), (r) => r.count);
     const st = [cnt(we.cur, 'funnel_start'), cnt(we.prev, 'funnel_start')], sv = [cnt(we.cur, 'summary_view'), cnt(we.prev, 'summary_view')];
-    const tile = (t, v, sub) => `<div class="panel" style="margin:0;padding:14px 16px"><div class="mute" style="font-size:12px">${t}</div><div style="font-size:26px;font-weight:650;letter-spacing:-.01em">${v}</div><div>${sub}</div></div>`;
-    body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:20px">
+    const tile = (t, v, sub) => `<div class="panel" style="margin:0;padding:16px 16px"><div class="mute" style="font-size:14px">${t}</div><div style="font-size:20px;font-weight:650;letter-spacing:-.01em">${v}</div><div>${sub}</div></div>`;
+    body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:24px">
       ${tile('Sessions, last 7 days', fmtN(ses[0]), chg(change(...ses)))}
-      ${tile('Share on phones', fmtPct(mob), '<span class="mute" style="font-size:12px">of sessions</span>')}
+      ${tile('Share on phones', fmtPct(mob), '<span class="mute" style="font-size:14px">of sessions</span>')}
       ${tile('Quotes started', st[0] ? fmtN(st[0]) : '–', chg(change(...st)))}
-      ${tile('Start to Summary', fmtPct(pct(sv[0], st[0])), `<span class="mute" style="font-size:12px">previous ${fmtPct(pct(sv[1], st[1]))}</span>`)}</div>
+      ${tile('Start to Summary', fmtPct(pct(sv[0], st[0])), `<span class="mute" style="font-size:14px">previous ${fmtPct(pct(sv[1], st[1]))}</span>`)}</div>
       <div class="panel"><h2>Sessions per day <span class="chip">${esc(m.range.from)} to ${esc(m.range.to)}</span></h2><div class="panel-pad">${bars(g.daily, 'sessions', last)}</div></div>`;
     const prods = D.products.map((p) => ({ p, rows: we.cur.filter((r) => r.product === p.id) })).filter((x) => x.rows.length);
     const cols = '--cols:minmax(150px,1.4fr) repeat(4,minmax(70px,1fr)) 80px 90px';
@@ -1078,7 +1078,7 @@ function renderMarketing() {
         prods.length ? prods.map(({ p, rows }) => {
           const c = STAGES.map(([e]) => cnt(rows, e)), tst = latestBySuite(p).map((r) => r.health);
           return `<button class="gt-row" data-open="${p.id}"><span class="name">${esc(p.name)}</span>${c.map((n) => `<span class="num">${n ? fmtN(n) : '–'}</span>`).join('')}<span class="num">${c[0] ? fmtPct(Math.round((1 - c[2] / c[0]) * 1000) / 10) : '–'}</span><span class="pill ${tst.includes('fail') ? 'fail' : tst.includes('warn') ? 'warn' : tst.length ? 'pass' : 'custom'}">${tst.includes('fail') ? 'Failing' : tst.includes('warn') ? 'Warnings' : tst.length ? 'Passing' : 'None'}</span></button>`;
-        }).join('') : '<div class="empty" style="padding:20px">No funnel events by product yet. See the event list for the web team in the README (Marketing tab section).</div>'}</div></div>`;
+        }).join('') : '<div class="empty" style="padding:24px">No funnel events by product yet. See the event list for the web team in the README (Marketing tab section).</div>'}</div></div>`;
     body += `<div class="panel"><h2>Where sessions come from <span class="chip">GA4, ${esc(String(m.range.from))} to ${esc(String(m.range.to))}</span></h2><div class="gt" style="--cols:minmax(180px,2fr) 100px 100px"><div class="gt-head"><span>Source / medium</span><span class="r">Sessions</span><span class="r">Engaged</span></div>${g.sources.map((x) => `<div class="gt-row" style="cursor:default"><span class="name">${esc(x.source)}</span><span class="num">${fmtN(x.sessions)}</span><span class="num">${fmtPct(pct(x.engaged, x.sessions))}</span></div>`).join('')}</div></div>`;
   }
   if (w) {
@@ -1088,7 +1088,7 @@ function renderMarketing() {
       <div class="panel-pad" style="padding-top:0">${bars(w.daily, 'spend', last)}</div>
       <div class="gt" style="--cols:minmax(100px,1fr) minmax(150px,2fr) 90px 90px 80px"><div class="gt-head"><span>Platform</span><span>Campaign</span><span class="r">Spend</span><span class="r">Clicks</span><span class="r">Cost/click</span></div>${w.campaigns.map((c) => `<div class="gt-row" style="cursor:default"><span>${esc(c.source)}</span><span class="name">${esc(c.campaign)}</span><span class="num">${fmtN(c.spend)}</span><span class="num">${fmtN(c.clicks)}</span><span class="num">${c.clicks ? (c.spend / c.clicks).toFixed(2) : '–'}</span></div>`).join('')}</div></div>`;
   }
-  $('#main').innerHTML = head + `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">${card('ga4')}${card('windsor')}</div>` + body +
+  $('#main').innerHTML = head + `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px">${card('ga4')}${card('windsor')}</div>` + body +
     `<div class="panel"><h2>Privacy</h2><div class="panel-pad" style="padding-top:6px">Only daily totals are shown. No NRIC, passport, name or contact detail is pulled or stored. Keys stay in <code>.env.local</code> on the machine that refreshes the data, and this tab is left out of the shared page.</div></div>`;
   bind();
   document.querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => openProduct(b.dataset.open)));
