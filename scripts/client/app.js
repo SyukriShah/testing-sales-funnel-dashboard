@@ -209,7 +209,7 @@ function heatPanel(p, run) {
       <span class="r" style="display:flex;gap:8px;justify-content:flex-end;align-items:center"><span class="pill ${pp.r.health}">${label[pp.r.health]}</span><span class="num mute" style="min-width:42px">${fmtS(pp.r.durationMs / 1000)}</span></span></button>`;
   }).join('');
   return `<div class="panel"><h2>${esc(run.suiteName)} <span class="pill ${run.health}">${label[run.health]}</span><span class="chip">${esc(run.runId)}</span><span class="chip">${esc(ago(run.startedAt))}</span>${run.device === 'mobile' ? '<span class="pill custom">phone size</span>' : run.custom ? '<span class="pill custom">custom data</span>' : ''}</h2>
-      <div class="sub2">${esc(p.name)} on ${esc(envLabel(run.env))}, ${esc(run.baseUrl)}. Each cell is how long that step took to reach. Click a row for details.</div>
+      <div class="sub2">${esc(envLabel(run.env))} · ${esc(run.baseUrl)}</div>
       ${dataUsed(run)}
       ${run.results.some((r) => r.sensitive) ? '<p class="note" style="margin:0 16px 8px"><b>Saved test record used.</b> Its screenshots are shown here only; they are left out of the shared dashboard link.</p>' : ''}
       <div class="heat"><div class="gt t-heat" style="${heatCols}"><div class="gt-head"><span>Scenario</span>${cols.map((c) => `<span style="text-align:center" title="${esc(c)}">${esc(stepLabel(c))}</span>`).join('')}<span class="r">Result</span></div>${heatRows}</div></div>
@@ -241,7 +241,7 @@ function detail() {
   const narrowed = !!(S.histFrom || S.histTo || S.histResult);
   const maxD = Math.max(...list.map((r) => r.durationMs), 1);
   const histCols = '--cols:minmax(250px,1.6fr) 140px 190px 130px 100px 170px minmax(80px,1fr)';
-  const histRows = (showAll ? hist : hist.slice(0, 12)).map((r) => `<button class="gt-row" data-r="${esc(r.runId)}" data-suite="${esc(r.suite)}" aria-selected="${shown.some((x) => x.runId === r.runId && x.suite === r.suite)}">
+  const histRows = (showAll ? hist : hist.slice(0, 6)).map((r) => `<button class="gt-row" data-r="${esc(r.runId)}" data-suite="${esc(r.suite)}" aria-selected="${shown.some((x) => x.runId === r.runId && x.suite === r.suite)}">
       <span class="name" style="font-variant-numeric:tabular-nums">${esc(r.runId)}</span><span>${esc(r.suiteName)}</span><span class="mute hide-s">${esc(fmtT(r.startedAt))}</span>
       <span class="hide-s">${r.custom ? '<span class="pill custom">custom</span>' : '<span class="mute">regular</span>'}</span>
       <span class="num">${fmtMs(r.durationMs)}</span>
@@ -258,7 +258,7 @@ function detail() {
         <span class="mute" style="font-size:14px">${hist.length} of ${list.length} runs</span>
       </div>
       <div class="gt t-hist" style="${histCols}"><div class="gt-head"><span>Run</span><span>Suite</span><span class="hide-s">When</span><span class="hide-s">Type</span><span class="r">Duration</span><span>Result</span><span class="hide-s">Relative</span></div>${histRows || '<div class="gt-row" style="cursor:default"><span class="mute">No runs match these filters. Try a wider date range.</span></div>'}</div>
-      ${hist.length > 12 ? `<div class="panel-pad"><button class="btn" id="histmore">${showAll ? 'Show fewer' : 'Show all ' + hist.length}</button></div>` : ''}</div>`;
+      ${hist.length > 6 ? `<div class="panel-pad"><button class="btn" id="histmore">${showAll ? 'Show fewer' : 'Show all ' + hist.length}</button></div>` : ''}</div>`;
 
   document.querySelectorAll('.heat .gt-row[data-ri]').forEach((b) => (b.onclick = () => {
     const x = panels.find((q) => q.run.suite === b.dataset.suite);
@@ -863,23 +863,26 @@ function renderInsights() {
   const order = ['High', 'Medium', 'Governance', 'Good'];
   const idOf = (line) => D.products.find((q) => line.startsWith(q.name))?.id;
   const counts = Object.fromEntries(order.map((k) => [k, INSIGHT_NOTES.filter((n) => n.pri === k).length]));
-  const notes = INSIGHT_NOTES.filter((n) => !S.insightPri || n.pri === S.insightPri).slice().sort((a, b) => order.indexOf(a.pri) - order.indexOf(b.pri)).map((n) => `<article class="panel" style="margin-top:8px"><h2><span class="pill ${tag[n.pri]}">${n.pri}</span>${esc(n.title)}<span class="chip">${esc(n.line)}</span></h2>
-      <div class="panel-pad" style="display:grid;gap:8px;padding-top:8px">
-        <div><b>What the tests saw.</b> ${esc(n.seen)}</div>
-        <div><b>Suggestion.</b> ${esc(n.idea)}</div>
-        ${n.guard ? `<div class="mute"><b>Security and governance.</b> ${esc(n.guard)}</div>` : ''}
-        ${idOf(n.line) ? `<div><button class="btn" data-open="${idOf(n.line)}">See ${esc(D.products.find((q) => q.id === idOf(n.line)).name)} results ›</button></div>` : ''}</div></article>`).join('');
+  const note = (n) => `<details class="nd" ${S.openNotes?.has(n.title) ? 'open' : ''} data-nt="${esc(n.title)}"><summary><span class="pill ${tag[n.pri]}">${n.pri}</span><span class="nt">${esc(n.title)}</span><span class="chip">${esc(n.line)}</span><span class="chev" aria-hidden="true">›</span></summary>
+      <div class="note-body">
+        <p><b>What the tests saw.</b> ${esc(n.seen)}</p>
+        <p><b>Suggestion.</b> ${esc(n.idea)}</p>
+        ${n.guard ? `<p class="mute"><b>Security and governance.</b> ${esc(n.guard)}</p>` : ''}
+        ${idOf(n.line) ? `<p><button class="btn" data-open="${idOf(n.line)}">See ${esc(D.products.find((q) => q.id === idOf(n.line)).name)} results ›</button></p>` : ''}</div></details>`;
+  const notes = INSIGHT_NOTES.filter((n) => !S.insightPri || n.pri === S.insightPri).slice().sort((a, b) => order.indexOf(a.pri) - order.indexOf(b.pri)).map(note).join('');
+  const ptile = (k, cls) => `<button class="tile ${cls}" data-ip="${k}" aria-label="Show ${k} notes"><b>${counts[k]}</b><span>${k === 'Good' ? 'working well' : k === 'Governance' ? 'governance' : k.toLowerCase() + ' priority'}</span></button>`;
   $('#main').innerHTML = seg + `
+    <div class="tiles tiles-lg" role="group" aria-label="Notes by priority">${ptile('High', 'fail')}${ptile('Medium', 'warn')}${ptile('Governance', '')}${ptile('Good', 'pass')}</div>
     <div class="strip pass"><div><h2>Where customers spend effort</h2>
       <div class="why">${heavy ? `Most to fill in: ${esc(heavy.p.name)} (${heavy.st.entries} entries). ` : ''}${best ? `Least: ${esc(best.p.name)} (${best.st.entries}). ` : ''}${waitiest ? `Longest wait after pressing next: ${esc(waitiest.p.name)} (${fmtS(waitiest.st.wait)}).` : ''}</div></div></div>
     <div class="panel"><h2>Journey effort <span class="chip">${esc(envLabel('production'))}</span><span class="chip">latest regular run</span></h2>
-      <div class="sub2">Measured from the test logs, up to the Summary page. Entries are the fields the test had to fill. Wait is the time the site took to show the next page; it does not include typing time.</div>
+      <div class="sub2">Up to the Summary page. Entries = fields filled. Wait = time the site took to show each next page.</div>
       <div class="gt wide" style="${cols}"><div class="gt-head"><span>Journey</span><span class="r">Pages</span><span class="r">Entries</span><span class="r">Wait total</span><span>Slowest step (worst plan)</span><span class="r">Errors</span></div>${body || '<div class="gt-row" style="cursor:default"><span class="mute">No journey runs yet.</span></div>'}</div></div>
     <h3 id="notes" style="margin:24px 0 0;font-size:16px">Notes and suggestions</h3>
     <div class="filters" style="padding:8px 0 0" role="group" aria-label="Filter notes by priority"><button data-ip="" aria-pressed="${!S.insightPri}">All ${INSIGHT_NOTES.length}</button>${order.map((k) => `<button data-ip="${k}" aria-pressed="${S.insightPri === k}">${k} ${counts[k]}</button>`).join('')}</div>
-    <p class="mute" style="margin:4px 0 0">Written from the runs of 2 Oct 2026. They are suggestions to take to the product, security and compliance owners.</p>
-    ${notes}
-    <div class="panel" style="margin-top:16px"><h2>What these tests cannot tell you</h2><div class="panel-pad"><ul style="margin:0;padding-left:16px;display:grid;gap:4px">
+    <p class="mute" style="margin:8px 0 0">From the runs of 2 Oct 2026. Select a note to open it. <button class="btn" id="notesall" style="margin-left:8px">Open all</button> <button class="btn" id="notesnone">Close all</button></p>
+    <div class="notes">${notes}</div>
+    <div class="panel" style="margin-top:24px"><h2>What these tests cannot tell you</h2><div class="panel-pad"><ul style="margin:0;padding-left:16px;display:grid;gap:4px">
       <li>How many real customers start and finish each journey, or where they drop out. That needs the analytics numbers.</li>
       <li>How it feels on a phone or a slow connection. Tests run on a desktop browser on a fast network.</li>
       <li>Whether the site is secure. The tests only watch behaviour on the surface and never press payment. A proper security review is separate.</li>
@@ -887,6 +890,10 @@ function renderInsights() {
   document.querySelectorAll('[data-iv]').forEach((b) => (b.onclick = () => { S.insightView = b.dataset.iv; renderInsights(); scrollTo({ top: 0 }); }));
   document.querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => openProduct(b.dataset.open)));
   document.querySelectorAll('[data-ip]').forEach((b) => (b.onclick = () => { S.insightPri = b.dataset.ip || null; renderInsights(); focusOn($('#notes')); }));
+  S.openNotes ??= new Set();
+  document.querySelectorAll('details.nd').forEach((d) => d.addEventListener('toggle', () => { d.open ? S.openNotes.add(d.dataset.nt) : S.openNotes.delete(d.dataset.nt); }));
+  if ($('#notesall')) $('#notesall').onclick = () => document.querySelectorAll('details.nd').forEach((d) => (d.open = true));
+  if ($('#notesnone')) $('#notesnone').onclick = () => document.querySelectorAll('details.nd').forEach((d) => (d.open = false));
 }
 
 
@@ -927,7 +934,7 @@ function renderPhone(seg) {
   const issues = rows.filter((x) => x.st.overflow || x.st.small || x.st.noHint.length || x.st.smallText.length);
   const list = (title, key, hint) => {
     const all = rows.flatMap((x) => x.st[key].map((n) => `${x.p.name}: ${n}`));
-    return all.length ? `<div class="panel" style="margin-top:8px"><h2>${title} <span class="chip">${all.length}</span></h2><div class="panel-pad"><div class="sub2" style="padding:0 0 8px">${hint}</div><ul style="margin:0;padding-left:16px;display:grid;gap:2px">${all.slice(0, 24).map((n) => `<li>${esc(n)}</li>`).join('')}</ul></div></div>` : '';
+    return all.length ? `<div class="panel" style="margin-top:16px"><h2>${title} <span class="chip">${all.length}</span></h2><div class="panel-pad"><div class="sub2" style="padding:0 0 8px">${hint}</div><ul style="margin:0;padding-left:16px;display:grid;gap:2px">${all.slice(0, 24).map((n) => `<li>${esc(n)}</li>`).join('')}</ul></div></div>` : '';
   };
   $('#main').innerHTML = seg + (rows.length ? `
     <div class="strip ${total.ok === total.n ? 'pass' : 'fail'}"><div><h2>${total.ok} of ${total.n} journeys completed on a phone</h2>
@@ -946,7 +953,7 @@ function renderPhone(seg) {
 
 function renderDesignRecs(seg) {
   const tag = { High: 'fail', Medium: 'warn' };
-  const cards = DESIGN_RECS.map((r) => `<article class="panel" style="margin-top:8px"><h2><span class="pill ${tag[r.pri]}">${r.pri}</span>${esc(r.title)}</h2>
+  const cards = DESIGN_RECS.map((r) => `<article class="panel" style="margin-top:16px"><h2><span class="pill ${tag[r.pri]}">${r.pri}</span>${esc(r.title)}</h2>
     <div class="panel-pad" style="display:grid;gap:8px;padding-top:8px">
       <div><b>Our funnel.</b> ${esc(r.ours)}</div>
       <div><b>Others and guidance.</b> ${esc(r.bench)}</div>
@@ -1090,7 +1097,7 @@ function renderMarketing() {
     const st = m[id] ?? { status: 'not-configured', message: 'No data pulled yet.' };
     const [name, steps] = sourceHelp[id];
     const pill = st.status === 'ok' ? '<span class="pill pass">Connected</span>' : st.status === 'error' ? '<span class="pill fail">Error</span>' : '<span class="pill custom">Not connected</span>';
-    return `<article class="panel" style="margin-top:8px"><h2>${name} ${pill}${m.sample ? ' <span class="pill warn">Sample data</span>' : ''}</h2><div class="panel-pad" style="padding-top:6px">
+    return `<article class="panel" style="margin-top:16px"><h2>${name} ${pill}${m.sample ? ' <span class="pill warn">Sample data</span>' : ''}</h2><div class="panel-pad" style="padding-top:6px">
       <div>${esc(st.message)}</div>${st.status === 'ok' ? '' : `<ol style="margin:8px 0 0;padding-left:24px;display:grid;gap:3px" class="mute">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`}</div></article>`;
   };
   const g = m.ga4?.status === 'ok' ? m.ga4 : null, w = m.windsor?.status === 'ok' ? m.windsor : null;
