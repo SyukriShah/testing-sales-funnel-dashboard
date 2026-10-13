@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import fs from 'node:fs';
+import { allEnvironments } from './scripts/targets.mjs';
 
 // One folder per run: runs/<RUN_ID>/. Set on first load in the main process so
 // workers (which re-load this file) inherit the same value through the env.
@@ -15,10 +16,11 @@ const runDir = `runs/${process.env.RUN_ID}`;
 // ENV_URL_<ID> (e.g. ENV_URL_SANDBOX) overrides an environment's base URL.
 const cfg = JSON.parse(fs.readFileSync('monitor.config.json', 'utf8'));
 const wanted = (process.env.TARGET_ENVS ?? 'production').split(',').map((s) => s.trim()).filter(Boolean);
+const environments = allEnvironments(cfg, process.cwd()); // monitor.config.json plus custom targets saved from the dashboard
 const envs = wanted.map((id) => {
-  const e = cfg.environments[id];
-  if (!e) throw new Error(`Unknown environment "${id}". Known: ${Object.keys(cfg.environments).join(', ')}`);
-  return { id, baseURL: process.env[`ENV_URL_${id.toUpperCase()}`] ?? e.baseUrl };
+  const e = environments[id];
+  if (!e) throw new Error(`Unknown environment "${id}". Known: ${Object.keys(environments).join(', ')}`);
+  return { id, baseURL: process.env[`ENV_URL_${id.toUpperCase()}`] ?? e.baseUrl, entry: e.entry ?? '/' };
 });
 
 // VIEWPORT=mobile runs every test in a phone-sized Chrome (Pixel 7); anything else is the desktop browser.
@@ -50,7 +52,7 @@ export default defineConfig({
   // One project per environment, same viewport so screenshots can be compared pixel for pixel.
   projects: envs.map((e) => ({
     name: e.id,
-    metadata: { env: e.id },
+    metadata: { env: e.id, entry: e.entry },
     use: { ...device, channel, baseURL: e.baseURL },
   })),
 });

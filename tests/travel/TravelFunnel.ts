@@ -1,3 +1,4 @@
+import { entryFor } from '../support/entry';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { addDays, cellLabel, slashDate } from '../support/dates';
 
@@ -18,7 +19,7 @@ export class TravelFunnel {
   }
 
   async openHomepage() {
-    await this.page.goto('/', { waitUntil: 'load' });
+    await this.page.goto(entryFor(this.page), { waitUntil: 'load' });
     await this.page.waitForLoadState('networkidle').catch(() => {}); // analytics can keep this busy
     await this.dismissPopups();
   }

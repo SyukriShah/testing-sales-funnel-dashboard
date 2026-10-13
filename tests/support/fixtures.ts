@@ -1,3 +1,4 @@
+import { setEntry } from './entry';
 import { test as base, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -140,6 +141,9 @@ export const test = base.extend<{ run: Run }>({
     const product = productOf(testInfo.file);
     const env = (testInfo.project.metadata?.env as string | undefined) ?? 'production';
     const baseURL = (testInfo.project.use as { baseURL?: string }).baseURL ?? '';
+    const entry = (testInfo.project.metadata?.entry as string | undefined) ?? '/';
+    setEntry(context, entry);
+    const startUrl = entry === '/' ? baseURL : baseURL.replace(/\/$/, '') + entry; // custom targets: the full pasted link, shown in the dashboard
     const name = slug(testInfo.title);
     const dir = path.join(RUN_ROOT, env, product, name);
     fs.mkdirSync(path.join(dir, 'screenshots'), { recursive: true });
@@ -224,7 +228,7 @@ export const test = base.extend<{ run: Run }>({
       log('SHOT', path.relative(RUN_ROOT, file));
     };
 
-    log('INFO', `START ${testInfo.title} on ${env} (${baseURL})`);
+    log('INFO', `START ${testInfo.title} on ${env} (${startUrl})`);
     await use({
       dir, product, env, log, shot,
       fact: (k, v) => { facts[k] = v; },
@@ -240,7 +244,7 @@ export const test = base.extend<{ run: Run }>({
         {
           runId: RUN_ID,
           env,
-          baseUrl: baseURL,
+          baseUrl: startUrl,
           /** 'dashboard' = started from the Run tests tab with custom data; excluded from health stats */
           trigger: process.env.RUN_TRIGGER ?? 'local',
           product,

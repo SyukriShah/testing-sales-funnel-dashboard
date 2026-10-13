@@ -36,6 +36,7 @@ function openProduct(id) {
 const S = {
   view: 'monitor', env: 'production', selected: null, openRun: null,
   cmpProduct: null, cmpRun: null,
+  targets: [], tgt: { label: '', url: '', extra: '', err: '' },
   drawer: null, histFilter: 'all', histAll: false, live: false, manifests: [], secrets: {}, editSecret: false, product: null, model: null, runEnv: 'production', errors: [], starting: false, run: null, timer: null,
 };
 
@@ -355,7 +356,7 @@ function designStep(st, A, B) {
 function renderCompare() {
   const comps = D.comparisons || [];
   if (!comps.length) {
-    $('#main').innerHTML = `<div class="empty">No environment comparison yet.<br>Open <b>Run tests</b>, choose <b>Both (compare)</b> and start a run. The report will appear here.<br>
+    $('#main').innerHTML = `<div class="empty">No environment comparison yet.<br>Open <b>Run tests</b>, choose <b>Both (compare)</b>, or save another URL (a new funnel or a partner site) and run it: it is compared with the latest Production result. The report will appear here.<br>
       <span class="mute">The sandbox must be reachable from this machine (VPN or network access may be needed).</span></div>`;
     return;
   }
@@ -387,7 +388,7 @@ function renderCompare() {
     <div class="picker" role="group" aria-label="Product">${prods.map((id) => `<button data-cp="${id}" aria-pressed="${id === S.cmpProduct}">${esc(comps.find((x) => x.product === id).productName)}</button>`).join('')}</div>
     <div class="banner ${w}">${esc(A)} vs ${esc(B)}: ${m.different || m.incomplete ? `${m.different + m.incomplete} of ${m.scenarios} scenario(s) differ or did not complete` : m.minor ? `${m.minor} of ${m.scenarios} scenario(s) have minor design differences` : `all ${m.scenarios} scenario(s) match`}</div>
     <section><h2>Summary report <span class="pill custom">${esc(c.runId)}</span></h2>
-      <p class="mute" style="margin:0 0 8px">${esc(A)}: ${esc(c.envA.baseUrl)}<br>${esc(B)}: ${esc(c.envB.baseUrl)}</p>
+      <p class="mute" style="margin:0 0 8px">${esc(A)}: ${esc(c.envA.baseUrl)}<br>${esc(B)}: ${esc(c.envB.baseUrl)}</p>${c.baseline ? `<p class="mute" style="margin:0 0 8px"><b>Baseline.</b> The Production side is the latest earlier Production result of each scenario (${c.baseline.map((b) => esc(b.runId) + ', ' + esc(fmtT(b.startedAt))).join('; ')}), not a new Production run. Differences in the data used, or changes on Production since then, can show up as differences.</p>` : ''}
       <div class="tiles">
         <div class="tile"><b>${m.scenarios}</b><span>scenarios compared</span></div>
         <div class="tile pass"><b>${m.identical}</b><span>identical</span></div>
@@ -525,7 +526,7 @@ function wireSecrets(m) {
   });
 }
 
-const runEnvList = () => (S.runEnv === 'both' ? D.envs.map((e) => e.id) : [S.runEnv]);
+const runEnvList = () => (S.runEnv === 'both' ? D.envs.filter((e) => !e.custom).map((e) => e.id) : [S.runEnv]);
 
 function renderRun() {
   const main = $('#main');
@@ -548,6 +549,17 @@ function renderRun() {
     <section><h2>Environment</h2>
       <div class="picker" role="group" aria-label="Environment" style="margin:0">${envOpts.map(([id, t]) => `<button data-renv="${id}" aria-pressed="${S.runEnv === id}" ${running ? 'disabled' : ''}>${esc(t)}</button>`).join('')}</div>
       <p class="mute" style="margin:8px 0 0">${S.runEnv === 'both' ? 'Runs the same data on both environments, then builds a flow, data and design comparison.' : esc(D.envs.find((e) => e.id === S.runEnv)?.baseUrl || '')}</p></section>
+    <section id="targets"><h2>Test another URL <span class="chip">same dummy data, compared with Production</span></h2>
+      <p class="mute" style="margin:0 0 8px">For a new funnel, a sandbox build, or the same product for a partner with a different agent code. Paste the link, save it, then pick it above as the environment. It runs the scenarios below and is compared with the latest Production result of the same scenarios. Production is not run again.</p>
+      ${S.targets.length ? `<div style="display:grid;gap:8px;margin-bottom:16px">${S.targets.map((t) => `<div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center"><b>${esc(t.label)}</b><span class="mute" style="overflow-wrap:anywhere">${esc(t.baseUrl || '')}${esc(t.entry && t.entry !== '/' ? t.entry : '')}</span><span style="margin-left:auto;display:flex;gap:8px"><button class="btn" data-tuse="${esc(t.id)}" ${running ? 'disabled' : ''}>Use for this run</button><button class="btn" data-tdel="${esc(t.id)}" aria-label="Remove ${esc(t.label)}" ${running ? 'disabled' : ''}>Remove</button></span></div>`).join('')}</div>` : ''}
+      <div class="fgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+        <label>Name<input id="t-label" maxlength="40" placeholder="Partner A motor" value="${esc(S.tgt.label)}"></label>
+        <label class="wide">Link to start from<input id="t-url" inputmode="url" autocomplete="off" placeholder="https://partner.example.com/" value="${esc(S.tgt.url)}"></label>
+        <label>Agent code or other parameters (optional)<input id="t-extra" autocomplete="off" placeholder="agent=ABC123" value="${esc(S.tgt.extra)}"></label>
+      </div>
+      ${S.tgt.err ? `<div class="err" role="alert" style="margin-top:8px">${esc(S.tgt.err)}</div>` : ''}
+      <div class="actions"><button class="btn primary" id="t-save" ${running ? 'disabled' : ''}>Save this URL</button></div>
+      <p class="mute" style="margin:8px 0 0">The test opens the link, then follows the same clicks as Production (home page, product, quote steps) up to the Summary page. Never pays. Saved links stay on this computer and are left out of the shared page.</p></section>
     <section><h2>${esc(m.name)}</h2><p class="mute" style="margin:0">${esc(m.description || '')}</p>
       <div class="actions"><button class="btn" id="rand" ${running ? 'disabled' : ''}>Randomise dummy data</button><button class="btn" id="reset" ${running ? 'disabled' : ''}>Reset to defaults</button></div></section>
     ${m.secretFields ? secretsCard(m, running) : ''}
@@ -572,6 +584,23 @@ function renderRun() {
     out.hidden = false; cp.hidden = false; cp.onclick = () => copyText(out.textContent, 'Diagnostics copied');
   };
   document.querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => { selectProduct(b.dataset.prod); renderRun(); toast(b.textContent + ' ready with default data'); }));
+  const keep = () => { S.tgt.label = $('#t-label').value; S.tgt.url = $('#t-url').value; S.tgt.extra = $('#t-extra').value; };
+  ['#t-label', '#t-url', '#t-extra'].forEach((q) => $(q) && ($(q).oninput = keep));
+  if ($('#t-save')) $('#t-save').onclick = async () => {
+    keep();
+    const r = await fetch('/api/targets', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ label: S.tgt.label, url: S.tgt.url, extra: S.tgt.extra }) });
+    const j = await r.json();
+    if (!r.ok) { S.tgt.err = (j.errors ?? ['Could not save']).join(' '); renderRun(); return; }
+    S.tgt = { label: '', url: '', extra: '', err: '' };
+    await loadTargets(); S.runEnv = j.id; renderRun();
+    toast(j.reachable ? 'Saved and selected. The site answered from this computer.' : 'Saved and selected, but the site did not answer from this computer. Check VPN or network access.');
+  };
+  document.querySelectorAll('[data-tuse]').forEach((b) => (b.onclick = () => { S.runEnv = b.dataset.tuse; renderRun(); toast('Environment set to ' + envLabel(S.runEnv)); }));
+  document.querySelectorAll('[data-tdel]').forEach((b) => (b.onclick = async () => {
+    await fetch('/api/targets/' + b.dataset.tdel, { method: 'DELETE' });
+    if (S.runEnv === b.dataset.tdel) S.runEnv = 'production';
+    await loadTargets(); renderRun(); toast('Removed. Earlier results stay in the history until pruned.');
+  }));
   document.querySelectorAll('[data-renv]').forEach((b) => (b.onclick = () => { S.runEnv = b.dataset.renv; renderRun(); }));
   document.querySelectorAll('[data-s]').forEach((el) => (el.oninput = el.onchange = () => {
     const f = m.scenarioFields.find((x) => x.key === el.dataset.k);
@@ -628,7 +657,7 @@ function liveRun() {
     return `<tr><td>${esc(envLabel(p.env))}</td><td>${esc(p.id)}</td><td><span class="pill ${st}">${st === 'pending' ? 'queued' : st}</span></td><td>${done ? fmtMs(done.durationMs) : ''}</td></tr>`;
   }).join('');
   const label2 = { running: 'Running', done: 'Finished - all passed', failed: 'Finished - some failed' }[r.state];
-  const both = r.envs.length > 1;
+  const both = r.envs.length > 1 || (D.comparisons || []).some((c) => c.runId === r.runId);
   box.innerHTML = `<section><h2>${esc(r.runId)} <span class="pill ${r.state === 'running' ? 'running' : r.state === 'done' ? 'passed' : 'failed'}">${label2}</span></h2>
     <table><thead><tr><th>Environment</th><th>Scenario</th><th>Status</th><th>Duration</th></tr></thead><tbody>${rows}</tbody></table>
     <pre class="log" id="log">${esc(r.log.slice(-60).join('\n'))}</pre>
@@ -643,12 +672,17 @@ function liveRun() {
 }
 
 // ---------- boot ----------
+async function loadTargets() {
+  try { S.targets = await (await fetch('/api/targets', { cache: 'no-store' })).json(); } catch { S.targets = []; }
+  try { D = await (await fetch('data.json', { cache: 'no-store' })).json(); } catch { /* keep current data */ }
+}
 async function probe() {
   try {
     const res = await fetch('/api/products', { cache: 'no-store' });
     if (!res.ok) return;
     S.manifests = await res.json();
     S.live = true;
+    await loadTargets();
     try { S.debug = (await fetch('/api/debug', { cache: 'no-store' })).ok; } catch { S.debug = false; }
     try { S.secrets = Object.fromEntries((await (await fetch('/api/secrets', { cache: 'no-store' })).json()).map((x) => [x.product, x])); } catch { /* none saved */ }
     try { D = await (await fetch('data.json', { cache: 'no-store' })).json(); } catch { /* embedded data is fine */ }

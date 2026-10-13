@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, execFile, execFileSync } from 'node:child_process';
+import { loadTargets, saveTargets, parseTarget, allEnvironments } from './targets.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const PORT = Number(process.env.PORT ?? 4317);
@@ -42,7 +43,7 @@ function diagnostics() {
     platform: `${process.platform} ${process.arch} ${os.release()}`, node: process.version, playwright: pw, cwd: root, host: `${HOST}:${PORT}`,
     browser: { channelUsed: channel, googleChromeInstalled: chrome, playwrightCache: cache, installedBrowsers: installed, bundledChromiumInstalled: bundled },
     envSet: Object.keys(process.env).filter((k) => /^(ENV_URL_|BROWSER_CHANNEL|PLAYWRIGHT_|HOST$|PORT$|VIEWPORT)/.test(k)),
-    targets: Object.fromEntries(Object.keys(cfg.environments).map((id) => [id, envUrl(id)])),
+    targets: Object.fromEntries(Object.keys(environments()).map((id) => [id, envUrl(id)])),
     problems, recentLog: debugTail.slice(-60),
   };
 }
@@ -67,7 +68,11 @@ function secretStatus() {
 
 const MAX_RUN_MS = 40 * 60_000;
 const cfg = JSON.parse(fs.readFileSync(path.join(root, 'monitor.config.json'), 'utf8'));
-const envUrl = (id) => process.env[`ENV_URL_${id.toUpperCase()}`] ?? cfg.environments[id].baseUrl;
+const environments = () => allEnvironments(cfg, root); // fresh each call: custom targets can be added while the server runs
+const envUrl = (id) => {
+  const e = environments()[id];
+  return process.env[`ENV_URL_${id.toUpperCase()}`] ?? (e.entry && e.entry !== '/' ? e.baseUrl + e.entry : e.baseUrl);
+};
 
 // Fail fast if an environment cannot be reached (e.g. the sandbox needs a VPN), instead of timing out mid-run.
 async function reachable(id) {
@@ -250,6 +255,41 @@ const server = http.createServer((req, res) => {
   dbg('req', req.method, url.pathname, 'host=' + req.headers.host, 'from=' + req.socket.remoteAddress);
 
   if (url.pathname === '/api/debug') return DEBUG ? sendJson(res, 200, diagnostics()) : sendJson(res, 404, { error: 'debug mode is off. Start the server with: npm run serve:debug' });
+  if (url.pathname === '/api/targets' || /^\/api\/targets\/t-[a-z0-9-]+$/.test(url.pathname)) {
+    if (req.method === 'GET') return sendJson(res, 200, loadTargets(root).map((t) => ({ ...t, ...parseTarget(t.url, t.extra) })));
+    const origin = req.headers.origin;
+    if (origin && !hostOk(new URL(origin).host)) return sendJson(res, 403, { error: 'cross-site request refused' });
+    if (req.method === 'DELETE') {
+      const id = url.pathname.split('/').pop();
+      saveTargets(root, loadTargets(root).filter((t) => t.id !== id));
+      dbg('target removed', id);
+      rebuild();
+      return sendJson(res, 200, { ok: true });
+    }
+    if (req.method === 'POST') {
+      let size = 0; const chunks = [];
+      req.on('data', (c) => { size += c.length; if (size > 4_000) req.destroy(); else chunks.push(c); });
+      req.on('end', async () => {
+        let b; try { b = JSON.parse(Buffer.concat(chunks).toString()); } catch { return sendJson(res, 400, { errors: ['Request body is not valid JSON'] }); }
+        const label = String(b?.label ?? '').trim();
+        const errs = [];
+        if (!/^[\w .&()/+-]{2,40}$/.test(label)) errs.push('Give it a short name (2 to 40 letters, numbers or spaces).');
+        const p = parseTarget(b?.url, b?.extra);
+        if (p.error) errs.push(p.error);
+        const list = loadTargets(root);
+        let id = 't-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+        if (!errs.length && list.some((t) => t.id === id)) errs.push('A target with that name already exists. Choose another name or remove the old one.');
+        if (errs.length) return sendJson(res, 400, { errors: errs });
+        list.push({ id, label, url: String(b.url).trim(), extra: String(b.extra ?? '').trim(), note: String(b.note ?? '').slice(0, 200), createdAt: new Date().toISOString() });
+        saveTargets(root, list);
+        dbg('target added', id, p.baseUrl + p.entry);
+        await rebuild(); // so the new environment shows in the page straight away
+        return sendJson(res, 201, { id, reachable: await reachable(id) });
+      });
+      return;
+    }
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/products') return sendJson(res, 200, manifests());
   if (req.method === 'GET' && url.pathname === '/api/secrets') return sendJson(res, 200, secretStatus());
 
@@ -280,7 +320,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/envs') {
-    return sendJson(res, 200, Object.entries(cfg.environments).map(([id, e]) => ({ id, label: e.label, baseUrl: envUrl(id) })));
+    return sendJson(res, 200, Object.entries(environments()).map(([id, e]) => ({ id, label: e.label, baseUrl: envUrl(id), custom: !!e.custom })));
   }
   if (req.method === 'GET' && url.pathname === '/api/runs/current') return sendJson(res, 200, progress());
 
@@ -297,11 +337,11 @@ const server = http.createServer((req, res) => {
       if (current?.state === 'running') return sendJson(res, 409, { errors: ['A test run is already in progress'], runId: current.runId });
       const { errs, overrides } = validate(m, body);
       const envs = body.envs ?? ['production'];
-      if (!Array.isArray(envs) || !envs.length || envs.some((e) => !cfg.environments[e])) errs.push('Choose a known environment');
+      if (!Array.isArray(envs) || !envs.length || envs.some((e) => !environments()[e])) errs.push('Choose a known environment');
       if (errs.length) return sendJson(res, 400, { errors: errs });
       for (const id of envs) {
         if (!(await reachable(id))) {
-          return sendJson(res, 400, { errors: [`${cfg.environments[id].label} (${envUrl(id)}) is not reachable from this machine. Check your VPN or network access, then try again.`] });
+          return sendJson(res, 400, { errors: [`${environments()[id].label} (${envUrl(id)}) is not reachable from this machine. Check your VPN or network access, then try again.`] });
         }
       }
       sendJson(res, 202, { runId: startRun(m, overrides, envs) });

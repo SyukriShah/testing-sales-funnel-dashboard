@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import { allEnvironments } from './targets.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const runsDir = path.join(root, 'runs');
@@ -17,7 +18,9 @@ const cfg = JSON.parse(fs.readFileSync(path.join(root, 'monitor.config.json'), '
 const artifact = process.argv.includes('--artifact');
 const recompare = process.argv.includes('--recompare'); // ignore cached comparisons (e.g. after changing thresholds)
 
-const envIds = Object.keys(cfg.environments);
+// Custom targets (another URL / partner / agent code) are local only: the shared page and static export never carry them.
+const environments = artifact ? cfg.environments : allEnvironments(cfg, root);
+const envIds = Object.keys(environments);
 const SKIP = ['report', 'test-results', 'compare'];
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
 const ignored = (url) => cfg.ignoredHttp.some((frag) => url.includes(frag));
@@ -29,6 +32,7 @@ function addScenario(runId, env, product, scDir, rel) {
   if (!fs.existsSync(f)) return;
   const r = JSON.parse(fs.readFileSync(f, 'utf8'));
   r.env = r.env ?? env;
+  r._runId = runId;
   const benignApi = r.httpErrors.filter((e) => ignored(e.url) && e.url.includes('/api/')).length;
   r.api = { total: r.api.total, failed: Math.max(0, r.api.failed - benignApi) };
   r.httpErrors = r.httpErrors.filter((e) => !ignored(e.url));
@@ -49,7 +53,7 @@ function addScenario(runId, env, product, scDir, rel) {
 for (const runId of isDir(runsDir) ? fs.readdirSync(runsDir).filter((d) => d.startsWith('run-')) : []) {
   for (const entry of fs.readdirSync(path.join(runsDir, runId))) {
     const dir = path.join(runsDir, runId, entry);
-    if (!isDir(dir) || SKIP.includes(entry)) continue;
+    if (!isDir(dir) || SKIP.includes(entry) || (/^t-/.test(entry) && !envIds.includes(entry))) continue; // folders of removed or hidden custom targets
     if (envIds.includes(entry)) {
       // new layout: <env>/<product>/<scenario>
       for (const product of fs.readdirSync(dir)) {
@@ -93,7 +97,7 @@ for (const runId of runIds) {
       }
       p.runs.push({
         runId, env, suite, suiteName: cfg.suites?.[suite] ?? suite, trigger,
-        baseUrl: rs[0].baseUrl ?? cfg.environments[env]?.baseUrl ?? '',
+        baseUrl: rs[0].baseUrl ?? environments[env]?.baseUrl ?? '',
         custom: trigger === 'dashboard' || trigger === 'mobile', // custom-data and phone-size runs are listed but excluded from health stats
         device: trigger === 'mobile' ? 'mobile' : 'desktop',
         data,
@@ -124,7 +128,8 @@ function compareShots(runId, product, scenario, a, b, rel) {
   for (const name of names) {
     const step = { step: name.replace(/\.png$/, ''), inA: !!A[name], inB: !!B[name], pixelPct: null, sizeMismatch: false, content: [], styles: [], paths: null, images: null, verdict: 'identical' };
     if (A[name] && B[name]) {
-      const fa = path.join(runsDir, runId, A[name]), fb = path.join(runsDir, runId, B[name]);
+      const ra = a._runId ?? runId, rb = b._runId ?? runId; // a baseline may come from an earlier run
+      const fa = path.join(runsDir, ra, A[name]), fb = path.join(runsDir, rb, B[name]);
             const base = path.basename(A[name]);
       let pa = readPng(fa), pb = readPng(fb);
       if (pa.width !== pb.width) {
@@ -144,7 +149,7 @@ function compareShots(runId, product, scenario, a, b, rel) {
         const diffRel = `compare/${product}/${scenario}/${stripNn(base).replace(/\.png$/, '')}.diff.png`;
         fs.mkdirSync(path.dirname(path.join(runsDir, runId, diffRel)), { recursive: true });
         fs.writeFileSync(path.join(runsDir, runId, diffRel), PNG.sync.write(diff));
-        step.images = artifact ? null : { a: `../runs/${runId}/${A[name]}`, b: `../runs/${runId}/${B[name]}`, diff: `../runs/${runId}/${diffRel}` };
+        step.images = artifact ? null : { a: `../runs/${ra}/${A[name]}`, b: `../runs/${rb}/${B[name]}`, diff: `../runs/${runId}/${diffRel}` };
       }
       const sa = a.snapshots[path.basename(A[name])], sb = b.snapshots[path.basename(B[name])];
       if (sa && sb) {
@@ -195,7 +200,23 @@ for (const runId of runIds) {
     (byProduct[product] ??= {})[env] = results;
   }
   for (const [product, perEnv] of Object.entries(byProduct)) {
-    const [refEnv, ...others] = envIds.filter((e) => perEnv[e]);
+    let [refEnv, ...others] = envIds.filter((e) => perEnv[e]);
+    let baseline = null;
+    if (refEnv && !others.length && environments[refEnv]?.custom && envIds.includes('production')) {
+      // A custom target ran alone: compare it with the latest earlier Production result of each same scenario (no extra Production traffic).
+      const phone = (perEnv[refEnv][0].trigger ?? '') === 'mobile';
+      const picked = [], from = new Map();
+      for (const t of perEnv[refEnv]) {
+        for (const rid of runIds.filter((x) => x < runId).reverse()) {
+          const cand = (runs.get(rid).get(`production|${product}`) ?? []).find((x) => x.scenario === t.scenario && ((x.trigger ?? '') === 'mobile') === phone && x.screenshots.length);
+          if (cand) { picked.push(cand); from.set(rid, cand.startedAt); break; }
+        }
+      }
+      if (!picked.length) continue;
+      perEnv.production = picked;
+      baseline = [...from].map(([rid, at]) => ({ runId: rid, startedAt: at }));
+      others = [refEnv]; refEnv = 'production';
+    }
     if (!refEnv || !others.length) continue;
     const otherEnv = others[0];
     // A finished run never changes, so its comparison (and diff images) is computed once and cached.
@@ -211,9 +232,9 @@ for (const runId of runIds) {
         const steps = compareShots(runId, product, a.scenario, a, b);
         const facts = factDiffs(a, b);
         const flow = [];
-        if (a.status !== b.status) flow.push(`${cfg.environments[refEnv].label} ${a.status}, ${cfg.environments[otherEnv].label} ${b.status}`);
+        if (a.status !== b.status) flow.push(`${environments[refEnv].label} ${a.status}, ${environments[otherEnv].label} ${b.status}`);
         for (const s of steps) {
-          if (s.verdict === 'missing') flow.push(`step "${s.step}" reached only in ${s.inA ? cfg.environments[refEnv].label : cfg.environments[otherEnv].label}`);
+          if (s.verdict === 'missing') flow.push(`step "${s.step}" reached only in ${s.inA ? environments[refEnv].label : environments[otherEnv].label}`);
           if (s.paths) flow.push(`step "${s.step}" is at ${s.paths.a} vs ${s.paths.b}`);
         }
         if (a.stoppedAt !== b.stoppedAt) flow.push(`ended at "${a.stoppedAt ?? 'failure'}" vs "${b.stoppedAt ?? 'failure'}"`);
@@ -226,9 +247,10 @@ for (const runId of runIds) {
       const count = (f) => scenarios.filter(f).length;
       comp = {
         product, productName: cfg.products[product] ?? product, runId,
-        startedAt: new Date(Math.min(...perEnv[refEnv].map((r) => Date.parse(r.startedAt)))).toISOString(),
-        envA: { id: refEnv, ...cfg.environments[refEnv], baseUrl: perEnv[refEnv][0].baseUrl ?? cfg.environments[refEnv].baseUrl },
-        envB: { id: otherEnv, ...cfg.environments[otherEnv], baseUrl: perEnv[otherEnv][0].baseUrl ?? cfg.environments[otherEnv].baseUrl },
+        startedAt: new Date(Math.min(...perEnv[baseline ? otherEnv : refEnv].map((r) => Date.parse(r.startedAt)))).toISOString(),
+        baseline, // set when the first side is the latest earlier Production result instead of a run made together
+        envA: { id: refEnv, ...environments[refEnv], baseUrl: perEnv[refEnv][0].baseUrl ?? environments[refEnv].baseUrl },
+        envB: { id: otherEnv, ...environments[otherEnv], baseUrl: perEnv[otherEnv][0].baseUrl ?? environments[otherEnv].baseUrl },
         summary: {
           scenarios: scenarios.length,
           identical: count((s) => s.overall === 'identical'),
@@ -323,7 +345,7 @@ const data = {
   title: cfg.title,
   generatedAt: new Date().toISOString(),
   slowRunMs: cfg.slowRunMs,
-  envs: envIds.map((id) => ({ id, ...cfg.environments[id] })),
+  envs: envIds.map((id) => ({ id, ...environments[id] })),
   products: Object.values(products).sort((a, b) => (lineOrder.indexOf(a.id) + 1 || 99) - (lineOrder.indexOf(b.id) + 1 || 99)),
   comparisons: comparisons.slice(-20),
   marketing: loadMarketing(),

@@ -1,3 +1,4 @@
+import { entryFor } from '../support/entry';
 import { expect, type Page } from '@playwright/test';
 import type { Run } from '../support/fixtures';
 import { quoteButtonId } from './data';
@@ -7,7 +8,7 @@ export class CarFunnel {
   constructor(readonly page: Page) {}
 
   async openHomepage() {
-    await this.page.goto('/', { waitUntil: 'load' });
+    await this.page.goto(entryFor(this.page), { waitUntil: 'load' });
     await this.page.waitForLoadState('networkidle').catch(() => {}); // analytics can keep this busy
   }
 
