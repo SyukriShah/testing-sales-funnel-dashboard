@@ -1,3 +1,5 @@
+import { isDirectEntry } from '../support/entry';
+import { openDirectly } from '../support/journey';
 import { test, expect } from '../support/fixtures';
 import { CarFunnel } from './CarFunnel';
 import { Walker } from '../support/walker';
@@ -29,20 +31,26 @@ test.describe('IKHLAS Motor Takaful (car) - entry and vehicle lookup', () => {
         ? `${s.product}; SAVED test record (${cred.idType} ending ${cred.idNumber.slice(-4)}), full journey`
         : `${s.product}; ${cred.idType} ${cred.idNumber}, vehicle ${cred.vehicleNumber} (synthetic)`);
 
-      const home = new CarFunnel(page);
-      await home.openHomepage();
-      await expect(page).toHaveTitle(/IKHLAS/i);
-      run.log('PASS', `Homepage loaded: ${page.url()}`);
-      await run.shot(page, 'homepage');
+      let funnel: CarFunnel;
+      if (isDirectEntry(page)) {
+        await openDirectly(page, run); // partner / agent link: this page is the funnel
+        funnel = new CarFunnel(page);
+      } else {
+        const home = new CarFunnel(page);
+        await home.openHomepage();
+        await expect(page).toHaveTitle(/IKHLAS/i);
+        run.log('PASS', `Homepage loaded: ${page.url()}`);
+        await run.shot(page, 'homepage');
 
-      await home.openCarCategory();
-      run.log('PASS', `Car page: ${page.url()}`);
-      await run.shot(page, 'car-category');
+        await home.openCarCategory();
+        run.log('PASS', `Car page: ${page.url()}`);
+        await run.shot(page, 'car-category');
 
-      const funnel = await home.openQuote(s.product);
-      await expect(funnel.page.getByRole('heading', { name: 'Motor Takaful', level: 1 })).toBeVisible();
-      run.log('PASS', `Quote funnel opened: ${funnel.page.url()}`);
-      await run.shot(funnel.page, 'funnel-landing');
+        funnel = await home.openQuote(s.product);
+        await expect(funnel.page.getByRole('heading', { name: 'Motor Takaful', level: 1 })).toBeVisible();
+        run.log('PASS', `Quote funnel opened: ${funnel.page.url()}`);
+        await run.shot(funnel.page, 'funnel-landing');
+      }
 
       // The button must stay disabled until both fields are filled.
       await expect(funnel.getQuote()).toBeDisabled();
@@ -87,7 +95,7 @@ test.describe('IKHLAS Motor Takaful (car) - entry and vehicle lookup', () => {
       const message = await funnel.lookupMessage();
       run.fact('lookup response', message);
       // Safety stop: a quote page means this synthetic pair matched a real record.
-      expect(funnel.page.url(), 'synthetic ID + plate must not match a real record').toMatch(/\/direct\/motor\/?$/);
+      expect(funnel.page.url(), 'synthetic ID + plate must not match a real record').toMatch(/\/direct\/motor\/?(\?.*)?$/);
       expect(message).toMatch(/001/);
       expect(message).toMatch(/Data not found/i);
       run.log('PASS', `Lookup service answered as expected: "${message.slice(0, 90)}"`);

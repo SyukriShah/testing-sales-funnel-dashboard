@@ -229,7 +229,10 @@ for (const runId of runIds) {
       for (const a of perEnv[refEnv]) {
         const b = perEnv[otherEnv].find((x) => x.scenario === a.scenario);
         if (!b) continue;
-        const steps = compareShots(runId, product, a.scenario, a, b);
+        let steps = compareShots(runId, product, a.scenario, a, b);
+        // A direct (partner / agent) link has no home or category page: those baseline-only steps are expected, not differences.
+        const directB = baseline && new URL(b.baseUrl || 'http://x/').pathname.replace(/\/+$/, '') !== '';
+        if (directB) steps = steps.filter((x) => !(x.verdict === 'missing' && !x.inB && /^(homepage|category|car-category|travel-category|entry-page)$/.test(x.step)));
         const facts = factDiffs(a, b);
         const flow = [];
         if (a.status !== b.status) flow.push(`${environments[refEnv].label} ${a.status}, ${environments[otherEnv].label} ${b.status}`);

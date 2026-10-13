@@ -336,6 +336,10 @@ const server = http.createServer((req, res) => {
       if (!m) return sendJson(res, 400, { errors: ['Unknown product'] });
       if (current?.state === 'running') return sendJson(res, 409, { errors: ['A test run is already in progress'], runId: current.runId });
       const { errs, overrides } = validate(m, body);
+      for (const id of body.envs ?? []) {
+        const e = environments()[id];
+        if (m.id === 'catalogue' && e?.custom && e.entry && e.entry.split('?')[0].replace(/\/+$/, '') !== '') errs.push(`${e.label} is a direct funnel link, so the entry-point checks (which start at a home page) do not apply. Run a product test instead.`);
+      }
       const envs = body.envs ?? ['production'];
       if (!Array.isArray(envs) || !envs.length || envs.some((e) => !environments()[e])) errs.push('Choose a known environment');
       if (errs.length) return sendJson(res, 400, { errors: errs });

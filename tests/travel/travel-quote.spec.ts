@@ -1,3 +1,5 @@
+import { isDirectEntry } from '../support/entry';
+import { openDirectly } from '../support/journey';
 import { test, expect } from '../support/fixtures';
 import { isPhone } from '../support/journey';
 import { TravelFunnel, addDays } from './TravelFunnel';
@@ -36,22 +38,28 @@ test.describe('IKHLAS Secure Travel Takaful - quote journey', () => {
       run.log('WARN', `Funnel has no country or Leisure/Business field; "${s.country}" maps to coverage area "${area}" and "${s.purpose}" to "${TRAVEL_TYPE}"`);
 
       // 1-3. Homepage
-      const home = new TravelFunnel(page);
-      await home.openHomepage();
-      await expect(page).toHaveTitle(/IKHLAS/i);
-      run.log('PASS', `Homepage loaded: ${page.url()}`);
-      await run.shot(page, 'homepage');
+      let funnel: TravelFunnel;
+      if (isDirectEntry(page)) {
+        await openDirectly(page, run); // partner / agent link: this page is the funnel
+        funnel = new TravelFunnel(page);
+      } else {
+        const home = new TravelFunnel(page);
+        await home.openHomepage();
+        await expect(page).toHaveTitle(/IKHLAS/i);
+        run.log('PASS', `Homepage loaded: ${page.url()}`);
+        await run.shot(page, 'homepage');
 
-      // Travel category
-      await home.openTravelCategory();
-      run.log('PASS', `Travel page: ${page.url()}`);
-      await run.shot(page, 'travel-category');
+        // Travel category
+        await home.openTravelCategory();
+        run.log('PASS', `Travel page: ${page.url()}`);
+        await run.shot(page, 'travel-category');
 
-      // Get Quote -> funnel (new tab)
-      const funnel = await home.openSecureTravelQuote();
-      run.log('PASS', `Quote funnel opened: ${funnel.page.url()}`);
-      await expect(funnel.page.getByRole('heading', { name: 'Secure Travel', level: 1, exact: true }).first()).toBeVisible(); // the page has several level-1 headings that contain these words
-      await run.shot(funnel.page, 'funnel-landing');
+        // Get Quote -> funnel (new tab)
+        funnel = await home.openSecureTravelQuote();
+        run.log('PASS', `Quote funnel opened: ${funnel.page.url()}`);
+        await expect(funnel.page.getByRole('heading', { name: 'Secure Travel', level: 1, exact: true }).first()).toBeVisible(); // the page has several level-1 headings that contain these words
+        await run.shot(funnel.page, 'funnel-landing');
+      }
 
       // Trip details
       await funnel.chooseSingleReturn();

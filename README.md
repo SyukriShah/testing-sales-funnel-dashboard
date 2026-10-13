@@ -126,8 +126,9 @@ The tests use Google Chrome where it is installed (macOS, Windows, or `/opt/goog
 
 On the **Run tests** tab, *Test another URL*: give it a name, paste the link to start from, optionally add parameters such as `agent=ABC123`, and save. It then appears as an environment next to Production and Sandbox. Run any product with the same scenarios and dummy data.
 
-- The journey opens the link (path and parameters kept), then follows the same clicks as Production up to the Summary page. It never pays.
+- A link with only a domain (or a home page) is treated as a home page: the journey follows the same clicks as Production (home, category, product, quote) up to the Summary page. A link with its own path, such as a partner link `https://sandbox.takaful-ikhlas.com.my/partner/pa?agent=GO15433`, is treated as a **direct funnel link**: the page is opened as the funnel's first page (path and `?agent=` kept) and the journey continues from there. Home and category steps are skipped and not counted as differences. It never pays.
 - Results are compared with the **latest earlier Production result of the same scenarios** (flow, data such as plans and prices, design and screenshots). Production is not run again. See the Compare tab; the report says which Production run was used as the baseline.
 - Several targets can be saved, for example one per partner or agent code.
 - Saved links live in `.local/targets.json` on this computer. Target runs and the Compare results for them are left out of the shared page and the static export, because partner URLs and agent codes are private.
-- Limits: the target must have the same page structure as Production (home page, product, quote steps). A site with different labels or steps needs its own journey. The agent code is sent on the first page; whether the site keeps it through the journey is not checked by the test.
+- Entry-point checks (the All products suite) need a home page, so they are refused for direct links. Run a product test instead.
+- Limits: the target must have the same page structure as Production (home page, product, quote steps) or, for a direct link, the same quote steps. A site with different labels or steps needs its own journey. The agent code is sent on the first page; whether the site keeps it through the journey is not checked by the test.
