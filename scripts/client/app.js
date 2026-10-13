@@ -240,7 +240,7 @@ function detail() {
     .filter((r) => !S.histResult || (S.histResult === 'fail' ? r.health === 'fail' : r.health !== 'fail'));
   const narrowed = !!(S.histFrom || S.histTo || S.histResult);
   const maxD = Math.max(...list.map((r) => r.durationMs), 1);
-  const histCols = '--cols:minmax(180px,1.4fr) 130px 150px 80px 92px 150px minmax(80px,1fr)';
+  const histCols = '--cols:minmax(250px,1.6fr) 140px 190px 130px 100px 170px minmax(80px,1fr)';
   const histRows = (showAll ? hist : hist.slice(0, 12)).map((r) => `<button class="gt-row" data-r="${esc(r.runId)}" data-suite="${esc(r.suite)}" aria-selected="${shown.some((x) => x.runId === r.runId && x.suite === r.suite)}">
       <span class="name" style="font-variant-numeric:tabular-nums">${esc(r.runId)}</span><span>${esc(r.suiteName)}</span><span class="mute hide-s">${esc(fmtT(r.startedAt))}</span>
       <span class="hide-s">${r.custom ? '<span class="pill custom">custom</span>' : '<span class="mute">regular</span>'}</span>
@@ -555,11 +555,11 @@ function renderRun() {
       <div class="fgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
         <label>Name<input id="t-label" maxlength="40" placeholder="Partner A motor" value="${esc(S.tgt.label)}"></label>
         <label class="wide">Link to start from<input id="t-url" inputmode="url" autocomplete="off" placeholder="https://partner.example.com/" value="${esc(S.tgt.url)}"></label>
-        <label>Agent code or other parameters (optional)<input id="t-extra" autocomplete="off" placeholder="agent=ABC123" value="${esc(S.tgt.extra)}"></label>
+        <label>Agent code (optional)<input id="t-extra" autocomplete="off" placeholder="agent=ABC123" value="${esc(S.tgt.extra)}"></label>
       </div>
       ${S.tgt.err ? `<div class="err" role="alert" style="margin-top:8px">${esc(S.tgt.err)}</div>` : ''}
       <div class="actions"><button class="btn primary" id="t-save" ${running ? 'disabled' : ''}>Save this URL</button></div>
-      <p class="mute" style="margin:8px 0 0">The test opens the link, then follows the same clicks as Production (home page, product, quote steps) up to the Summary page. Never pays. Saved links stay on this computer and are left out of the shared page.</p></section>
+      <p class="mute" style="margin:8px 0 0">A home-page link follows the same clicks as Production (home page, product, quote steps). A link with its own path, such as a partner link, is opened as the funnel's first page. Both stop at the Summary page and never pay. Saved links stay on this computer and are left out of the shared page.</p></section>
     <section><h2>${esc(m.name)}</h2><p class="mute" style="margin:0">${esc(m.description || '')}</p>
       <div class="actions"><button class="btn" id="rand" ${running ? 'disabled' : ''}>Randomise dummy data</button><button class="btn" id="reset" ${running ? 'disabled' : ''}>Reset to defaults</button></div></section>
     ${m.secretFields ? secretsCard(m, running) : ''}
@@ -874,7 +874,7 @@ function renderInsights() {
       <div class="why">${heavy ? `Most to fill in: ${esc(heavy.p.name)} (${heavy.st.entries} entries). ` : ''}${best ? `Least: ${esc(best.p.name)} (${best.st.entries}). ` : ''}${waitiest ? `Longest wait after pressing next: ${esc(waitiest.p.name)} (${fmtS(waitiest.st.wait)}).` : ''}</div></div></div>
     <div class="panel"><h2>Journey effort <span class="chip">${esc(envLabel('production'))}</span><span class="chip">latest regular run</span></h2>
       <div class="sub2">Measured from the test logs, up to the Summary page. Entries are the fields the test had to fill. Wait is the time the site took to show the next page; it does not include typing time.</div>
-      <div class="gt" style="${cols}"><div class="gt-head"><span>Journey</span><span class="r">Pages</span><span class="r">Entries</span><span class="r">Wait total</span><span>Slowest step (worst plan)</span><span class="r">Errors</span></div>${body || '<div class="gt-row" style="cursor:default"><span class="mute">No journey runs yet.</span></div>'}</div></div>
+      <div class="gt wide" style="${cols}"><div class="gt-head"><span>Journey</span><span class="r">Pages</span><span class="r">Entries</span><span class="r">Wait total</span><span>Slowest step (worst plan)</span><span class="r">Errors</span></div>${body || '<div class="gt-row" style="cursor:default"><span class="mute">No journey runs yet.</span></div>'}</div></div>
     <h3 id="notes" style="margin:24px 0 0;font-size:16px">Notes and suggestions</h3>
     <div class="filters" style="padding:8px 0 0" role="group" aria-label="Filter notes by priority"><button data-ip="" aria-pressed="${!S.insightPri}">All ${INSIGHT_NOTES.length}</button>${order.map((k) => `<button data-ip="${k}" aria-pressed="${S.insightPri === k}">${k} ${counts[k]}</button>`).join('')}</div>
     <p class="mute" style="margin:4px 0 0">Written from the runs of 2 Oct 2026. They are suggestions to take to the product, security and compliance owners.</p>
@@ -934,7 +934,7 @@ function renderPhone(seg) {
       <div class="why">Pixel 7 size (${rows[0].st.width ?? 412} px wide), Production. ${issues.length ? `${issues.length} of ${rows.length} suites have layout points to look at.` : 'No layout points found.'} ${esc(fmtT(rows[0].run.startedAt))}</div></div></div>
     <div class="panel"><h2>Phone-size checks <span class="chip">${esc(envLabel('production'))}</span></h2>
       <div class="sub2">Taller columns mean more to fix. The checks are automatic and cover layout, tap size and keyboard hints, not how it feels to use. Click a row for its steps and phone screenshots.</div>
-      <div class="gt" style="${cols}"><div class="gt-head"><span>Journey</span><span>Completed</span><span class="r">Sideways scroll</span><span class="r">Small taps</span><span class="r">No key hint</span><span class="r">Zoom text</span><span class="r">Sticky bar</span></div>${body}</div>
+      <div class="gt wide" style="${cols}"><div class="gt-head"><span>Journey</span><span>Completed</span><span class="r">Sideways scroll</span><span class="r">Small taps</span><span class="r">No key hint</span><span class="r">Zoom text</span><span class="r">Sticky bar</span></div>${body}</div>
       <div class="legend" style="display:block"><span><b>Sideways scroll</b>: screens wider than the phone.</span> <span><b>Small taps</b>: buttons or links under 24 px, the WCAG 2.2 minimum (links inside sentences are exempt).</span> <span><b>No key hint</b>: ID, phone, email or postcode boxes that do not ask for a number or email keyboard.</span> <span><b>Zoom text</b>: text boxes under 16 px, which makes iPhones zoom in when tapped.</span> <span><b>Sticky bar</b>: the most screen a fixed button bar covers.</span></div></div>
     ${list('Boxes without a number or email keyboard', 'noHint', 'Add the matching input type or inputmode (numeric for ID, phone, postcode and account; email for email).')}
     ${list('Boxes under 16 px text', 'smallText', 'Use at least 16 px so iPhones do not zoom in when the box is tapped.')}
@@ -1117,19 +1117,19 @@ function renderMarketing() {
     const prods = D.products.map((p) => ({ p, rows: we.cur.filter((r) => r.product === p.id) })).filter((x) => x.rows.length);
     const cols = '--cols:minmax(150px,1.4fr) repeat(4,minmax(70px,1fr)) 80px 90px';
     body += `<div class="panel"><h2>Funnel by product <span class="chip">last 7 days</span></h2><div class="sub2">Genuine customers only. Drop-off is measured from Started. Click a row to see what the tests say for the same product.</div>
-      <div class="gt" style="${cols}"><div class="gt-head"><span>Product</span>${STAGES.map(([, l]) => `<span class="r">${l}</span>`).join('')}<span class="r">Drop-off</span><span>Test</span></div>${
+      <div class="gt wide" style="${cols}"><div class="gt-head"><span>Product</span>${STAGES.map(([, l]) => `<span class="r">${l}</span>`).join('')}<span class="r">Drop-off</span><span>Test</span></div>${
         prods.length ? prods.map(({ p, rows }) => {
           const c = STAGES.map(([e]) => cnt(rows, e)), tst = latestBySuite(p).map((r) => r.health);
           return `<button class="gt-row" data-open="${p.id}"><span class="name">${esc(p.name)}</span>${c.map((n) => `<span class="num">${n ? fmtN(n) : '–'}</span>`).join('')}<span class="num">${c[0] ? fmtPct(Math.round((1 - c[2] / c[0]) * 1000) / 10) : '–'}</span><span class="pill ${tst.includes('fail') ? 'fail' : tst.includes('warn') ? 'warn' : tst.length ? 'pass' : 'custom'}">${tst.includes('fail') ? 'Failing' : tst.includes('warn') ? 'Warnings' : tst.length ? 'Passing' : 'None'}</span></button>`;
         }).join('') : '<div class="empty" style="padding:24px">No funnel events by product yet. See the event list for the web team in the README (Marketing tab section).</div>'}</div></div>`;
-    body += `<div class="panel"><h2>Where sessions come from <span class="chip">GA4, ${esc(String(m.range.from))} to ${esc(String(m.range.to))}</span></h2><div class="gt" style="--cols:minmax(180px,2fr) 100px 100px"><div class="gt-head"><span>Source / medium</span><span class="r">Sessions</span><span class="r">Engaged</span></div>${g.sources.map((x) => `<div class="gt-row" style="cursor:default"><span class="name">${esc(x.source)}</span><span class="num">${fmtN(x.sessions)}</span><span class="num">${fmtPct(pct(x.engaged, x.sessions))}</span></div>`).join('')}</div></div>`;
+    body += `<div class="panel"><h2>Where sessions come from <span class="chip">GA4, ${esc(String(m.range.from))} to ${esc(String(m.range.to))}</span></h2><div class="gt wide" style="--cols:minmax(180px,2fr) 100px 100px"><div class="gt-head"><span>Source / medium</span><span class="r">Sessions</span><span class="r">Engaged</span></div>${g.sources.map((x) => `<div class="gt-row" style="cursor:default"><span class="name">${esc(x.source)}</span><span class="num">${fmtN(x.sessions)}</span><span class="num">${fmtPct(pct(x.engaged, x.sessions))}</span></div>`).join('')}</div></div>`;
   }
   if (w) {
     const last = w.daily.map((d) => d.date).sort().at(-1), wd = windows(w.daily, last);
     const spend = [sum(wd.cur, (r) => r.spend), sum(wd.prev, (r) => r.spend)], clicks = [sum(wd.cur, (r) => r.clicks), sum(wd.prev, (r) => r.clicks)];
     body += `<div class="panel"><h2>Campaigns <span class="chip">Windsor.ai</span></h2><div class="sub2">Spend ${fmtN(spend[0])} ${chg(change(...spend), false)} · Clicks ${fmtN(clicks[0])} ${chg(change(...clicks))} (last 7 days). Table below covers the whole period.</div>
       <div class="panel-pad" style="padding-top:0">${bars(w.daily, 'spend', last)}</div>
-      <div class="gt" style="--cols:minmax(100px,1fr) minmax(150px,2fr) 90px 90px 80px"><div class="gt-head"><span>Platform</span><span>Campaign</span><span class="r">Spend</span><span class="r">Clicks</span><span class="r">Cost/click</span></div>${w.campaigns.map((c) => `<div class="gt-row" style="cursor:default"><span>${esc(c.source)}</span><span class="name">${esc(c.campaign)}</span><span class="num">${fmtN(c.spend)}</span><span class="num">${fmtN(c.clicks)}</span><span class="num">${c.clicks ? (c.spend / c.clicks).toFixed(2) : '–'}</span></div>`).join('')}</div></div>`;
+      <div class="gt wide" style="--cols:minmax(100px,1fr) minmax(150px,2fr) 90px 90px 80px"><div class="gt-head"><span>Platform</span><span>Campaign</span><span class="r">Spend</span><span class="r">Clicks</span><span class="r">Cost/click</span></div>${w.campaigns.map((c) => `<div class="gt-row" style="cursor:default"><span>${esc(c.source)}</span><span class="name">${esc(c.campaign)}</span><span class="num">${fmtN(c.spend)}</span><span class="num">${fmtN(c.clicks)}</span><span class="num">${c.clicks ? (c.spend / c.clicks).toFixed(2) : '–'}</span></div>`).join('')}</div></div>`;
   }
   $('#main').innerHTML = head + `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px">${card('ga4')}${card('windsor')}</div>` + body +
     `<div class="panel"><h2>Privacy</h2><div class="panel-pad" style="padding-top:6px">Only daily totals are shown. No NRIC, passport, name or contact detail is pulled or stored. Keys stay in <code>.env.local</code> on the machine that refreshes the data, and this tab is left out of the shared page.</div></div>`;

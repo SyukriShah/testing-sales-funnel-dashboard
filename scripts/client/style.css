@@ -223,3 +223,20 @@ a{color:var(--link)}
 .panel,.strip,.card{transition:box-shadow var(--t-base)}
 .btn:disabled,button:disabled{opacity:.6}
 @media (max-width:600px){.btn,.filters button,.envsw button,nav button{min-height:44px}}
+
+/* alignment pass: wider text sizes need wrapping and room, not clipping */
+.gt-row>*{overflow-wrap:anywhere}
+.gt-row>.num,.gt-row>.pill,.gt-row>.r,.gt-row>.chip{white-space:nowrap}
+.gt-row>.num{overflow:visible}
+.gt-row .name{white-space:normal;line-height:24px}
+.gt-row .name>.mute{display:block;line-height:20px}
+.gt-row>span:not(.name):not(.num):not(.pill):not(.r){white-space:normal}
+.gt-head{align-items:end}
+.gt-head>*{white-space:normal;line-height:20px}
+.heat .gt-row>*{white-space:nowrap}
+.panel{overflow-x:auto}
+@media(max-width:700px){.gt.wide{min-width:640px}}
+#targets .fgrid{align-items:end}
+#targets label{display:flex;flex-direction:column;gap:6px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;font-size:14px;min-width:0}
+#targets input{width:100%;height:36px;text-transform:none;letter-spacing:0;font:16px -apple-system,system-ui,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--field);border:1px solid var(--edge);border-radius:var(--r-ctl);padding:0 8px}
+#targets .actions{margin-top:16px}
